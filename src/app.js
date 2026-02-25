@@ -16,15 +16,17 @@ const { errorHandler } = require('./middleware/errorHandler');
 const app = express();
 
 // ─── Security headers ─────────────────────────────────────────────────────────
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
+
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"], // Add your specific script origins here
+            scriptSrc: ["'self'", "'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            imgSrc: ["'self'", "data:", "blob:", "http://localhost:5000"], // Adjust for production
-            connectSrc: ["'self'", "http://localhost:5000"],
+            imgSrc: ["'self'", "data:", "blob:", "http://localhost:5000", BACKEND_URL],
+            connectSrc: ["'self'", "http://localhost:5000", BACKEND_URL],
             objectSrc: ["'none'"],
             upgradeInsecureRequests: [],
         },
@@ -33,13 +35,24 @@ app.use(helmet({
 }));
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://kmsf-uk.netlify.app',
+    ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : []),
+];
+
 app.use(
     cors({
-        origin: process.env.NODE_ENV === 'production'
-            ? process.env.CORS_ORIGIN
-            : '*',
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+        origin: (origin, callback) => {
+            // Allow requests with no origin (e.g. mobile apps, curl, Postman)
+            if (!origin) return callback(null, true);
+            if (allowedOrigins.includes(origin)) return callback(null, true);
+            callback(new Error(`CORS: Origin '${origin}' not allowed`));
+        },
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
+        credentials: true,
     })
 );
 
