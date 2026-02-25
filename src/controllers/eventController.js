@@ -49,9 +49,9 @@ exports.createEvent = async (req, res, next) => {
         const { title, date, time, location, description, organizer, prices, isPinned } = req.body;
         const eventData = { title, date, time, location, description, organizer, isPinned };
 
-        // Handle image upload
+        // Handle image upload (Cloudinary returns full URL in req.file.path)
         if (req.file) {
-            eventData.image = `/uploads/${req.file.filename}`;
+            eventData.image = req.file.path;
         }
 
         // Handle prices if sent as a JSON string from FormData
@@ -78,9 +78,9 @@ exports.updateEvent = async (req, res, next) => {
         const { title, date, time, location, description, organizer, prices, isPinned } = req.body;
         const eventData = { title, date, time, location, description, organizer, isPinned };
 
-        // Handle image upload
+        // Handle image upload (Cloudinary returns full URL in req.file.path)
         if (req.file) {
-            eventData.image = `/uploads/${req.file.filename}`;
+            eventData.image = req.file.path;
         }
 
         // Handle prices if sent as a JSON string from FormData

@@ -1,26 +1,18 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+const storage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: 'kmsf-events',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+        transformation: [{ width: 1200, height: 800, crop: 'limit', quality: 'auto' }],
     },
 });
 
 const fileFilter = (req, file, cb) => {
-    // Accept images only
-    if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF)$/)) {
+    if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF|webp|WEBP)$/)) {
         req.fileValidationError = 'Only image files are allowed!';
         return cb(new Error('Only image files are allowed!'), false);
     }
@@ -28,9 +20,9 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+    storage,
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
 
 module.exports = upload;
