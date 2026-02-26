@@ -69,7 +69,9 @@ app.use('/api/', limiter); // Apply to all /api routes if applicable
 // ─── Stricter rate limit for auth endpoints ────────────────────────────────────
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 20, // Increased from 10 to 20 attempts per 15 mins
+    max: 50, // 50 auth attempts per 15 mins per IP
+    standardHeaders: true,
+    legacyHeaders: false,
     message: { success: false, message: 'Too many attempts. Please try again later.' },
 });
 
@@ -93,12 +95,13 @@ app.get('/health', (req, res) => {
 });
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
-app.use('/', authLimiter);           // Apply auth limiter to all routes (tweak as needed)
-app.use('/', authRouter);            // /login, /request-verification, etc.
-app.use('/', subscriptionRouter);    // /start-subscription, /renew-subscription
-app.use('/', memberRouter);          // /member/subscription-status
-app.use('/admin', adminRouter);      // /admin/*
-app.use('/events', eventRouter);     // /events/*
+app.use('/login', authLimiter);           // Auth limiter only on login
+app.use('/register', authLimiter);        // Auth limiter only on register
+app.use('/', authRouter);                 // /login, /request-verification, etc.
+app.use('/', subscriptionRouter);         // /start-subscription, /renew-subscription
+app.use('/', memberRouter);               // /member/subscription-status
+app.use('/admin', adminRouter);           // /admin/*
+app.use('/events', eventRouter);          // /events/*
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
