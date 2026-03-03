@@ -84,7 +84,8 @@ const createMember = async (req, res, next) => {
     try {
         const {
             title, firstName, lastName, gender, organization,
-            email, password, speciality, branch, telephone, address,
+            email, password, speciality, telephone,
+            addressLine1, addressLine2, city, country, postCode,
             role, membershipStatus, subscriptionEndDate,
         } = req.body;
 
@@ -103,7 +104,8 @@ const createMember = async (req, res, next) => {
             title, firstName, lastName, gender, organization,
             email: email.toLowerCase(),
             password: hashedPassword,
-            speciality, branch, telephone, address,
+            speciality, telephone,
+            addressLine1, addressLine2, city, country, postCode,
             role: role || 'member',
             membershipStatus: membershipStatus || 'active',
             memberId,
@@ -128,13 +130,15 @@ const updateMember = async (req, res, next) => {
     try {
         const {
             title, firstName, lastName, gender, organization,
-            speciality, branch, telephone, address,
+            speciality, telephone,
+            addressLine1, addressLine2, city, country, postCode,
             role, membershipStatus, subscriptionEndDate, newPassword
         } = req.body;
 
         const updateData = {
             title, firstName, lastName, gender, organization,
-            speciality, branch, telephone, address,
+            speciality, telephone,
+            addressLine1, addressLine2, city, country, postCode,
             role, membershipStatus
         };
 

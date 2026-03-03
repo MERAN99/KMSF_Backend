@@ -8,8 +8,8 @@ const {
 const { validateStartSubscription } = require('../middleware/validate');
 const { requireAuth } = require('../middleware/auth');
 
-// POST /start-subscription — public (no auth required before payment)
-router.post('/start-subscription', validateStartSubscription, startSubscription);
+// POST /start-subscription — must be authenticated (registered user upgrading to paid)
+router.post('/start-subscription', requireAuth, startSubscription);
 
 // POST /verify-session — public (confirm payment on redirect)
 router.post('/verify-session', verifySession);

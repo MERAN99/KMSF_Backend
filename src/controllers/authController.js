@@ -1,6 +1,10 @@
 const bcrypt = require('bcryptjs');
+const User = require('../models/User');
 const { findByEmail } = require('../services/userService');
 const { signToken } = require('../middleware/auth');
+const { generateMemberId } = require('../utils/memberId');
+const { welcomeEmailTemplate } = require('../utils/emailTemplates');
+const { sendEmail } = require('../services/emailService');
 
 
 // ─── POST /login ─────────────────────────────────────────────────────────────
@@ -250,4 +254,64 @@ const resetPassword = async (req, res, next) => {
     }
 };
 
-module.exports = { login, requestVerification, confirmVerification, changePassword, forgotPassword, verifyResetCode, resetPassword };
+// ─── POST /register ───────────────────────────────────────────────────────────
+const register = async (req, res, next) => {
+    try {
+        const {
+            title, firstName, lastName, gender, organization,
+            email, password, speciality, telephone,
+            addressLine1, addressLine2, city, country, postCode,
+        } = req.body;
+
+        // Check for duplicate email
+        const existing = await findByEmail(email);
+        if (existing) {
+            return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
+        const memberId = await generateMemberId();
+
+        const user = new User({
+            title, firstName, lastName, gender, organization,
+            email: email.toLowerCase(),
+            password: hashedPassword,
+            speciality, telephone,
+            addressLine1, addressLine2, city, country, postCode,
+            role: 'member',
+            membershipStatus: 'registered',
+            memberId,
+        });
+
+        await user.save();
+
+        // Send a welcome email (non-blocking)
+        try {
+            const { subject, html } = welcomeEmailTemplate(user);
+            await sendEmail(user.email, subject, html);
+        } catch (emailErr) {
+            console.warn('Welcome email failed (non-fatal):', emailErr.message);
+        }
+
+        const token = signToken(user);
+
+        res.status(201).json({
+            success: true,
+            message: 'Account created successfully.',
+            token,
+            user: {
+                id: user._id,
+                memberId: user.memberId,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+                membershipStatus: user.membershipStatus,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { login, requestVerification, confirmVerification, changePassword, forgotPassword, verifyResetCode, resetPassword, register };

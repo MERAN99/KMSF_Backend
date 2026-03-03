@@ -25,9 +25,12 @@ const validateStartSubscription = [
     body('organization').notEmpty().withMessage('Organization is required.').trim(),
     body('email').isEmail().withMessage('Valid email is required.').trim().toLowerCase(),
     body('speciality').notEmpty().withMessage('Speciality is required.').trim(),
-    body('branch').notEmpty().withMessage('Branch is required.').trim(),
     body('telephone').notEmpty().withMessage('Telephone is required.').trim(),
-    body('address').notEmpty().withMessage('Address is required.').trim(),
+    body('addressLine1').notEmpty().withMessage('Address Line 1 is required.').trim(),
+    body('addressLine2').optional().trim(),
+    body('city').notEmpty().withMessage('City is required.').trim(),
+    body('country').notEmpty().withMessage('Country is required.').trim(),
+    body('postCode').notEmpty().withMessage('Post code is required.').trim(),
     body('password').custom((value) => {
         if (!value) {
             throw new Error('Password is required.');
@@ -44,6 +47,31 @@ const validateStartSubscription = [
 const validateLogin = [
     body('email').isEmail().withMessage('Valid email is required.').trim().toLowerCase(),
     body('password').notEmpty().withMessage('Password is required.'),
+    handleValidationErrors,
+];
+
+const validateRegister = [
+    body('title').notEmpty().withMessage('Title is required.').trim(),
+    body('firstName').notEmpty().withMessage('First name is required.').trim(),
+    body('lastName').notEmpty().withMessage('Last name is required.').trim(),
+    body('gender').notEmpty().withMessage('Gender is required.').trim(),
+    body('organization').notEmpty().withMessage('Organization is required.').trim(),
+    body('email').isEmail().withMessage('Valid email is required.').trim().toLowerCase(),
+    body('speciality').notEmpty().withMessage('Speciality is required.').trim(),
+    body('telephone').notEmpty().withMessage('Telephone is required.').trim(),
+    body('addressLine1').notEmpty().withMessage('Address Line 1 is required.').trim(),
+    body('addressLine2').optional().trim(),
+    body('city').notEmpty().withMessage('City is required.').trim(),
+    body('country').notEmpty().withMessage('Country is required.').trim(),
+    body('postCode').notEmpty().withMessage('Post code is required.').trim(),
+    body('password').custom((value) => {
+        if (!value) throw new Error('Password is required.');
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!passwordRegex.test(value)) {
+            throw new Error('Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.');
+        }
+        return true;
+    }),
     handleValidationErrors,
 ];
 
@@ -77,9 +105,11 @@ const validateCreateMember = [
     body('organization').notEmpty().withMessage('Organization is required.').trim(),
     body('email').isEmail().withMessage('Valid email is required.').trim().toLowerCase(),
     body('speciality').notEmpty().withMessage('Speciality is required.').trim(),
-    body('branch').notEmpty().withMessage('Branch is required.').trim(),
-    body('telephone').notEmpty().withMessage('Telephone is required.').trim(),
-    body('address').notEmpty().withMessage('Address is required.').trim(),
+    body('addressLine1').notEmpty().withMessage('Address Line 1 is required.').trim(),
+    body('addressLine2').optional().trim(),
+    body('city').notEmpty().withMessage('City is required.').trim(),
+    body('country').notEmpty().withMessage('Country is required.').trim(),
+    body('postCode').notEmpty().withMessage('Post code is required.').trim(),
     body('password').optional().custom((value) => {
         if (!value) return true;
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -98,9 +128,11 @@ const validateUpdateMember = [
     body('gender').optional().isIn(['Male', 'Female', 'Other']).withMessage('Invalid gender.'),
     body('organization').optional().isIn(['KSA', 'KuMA']).withMessage('Invalid organization.'),
     body('speciality').optional().notEmpty().withMessage('Speciality cannot be empty.').trim(),
-    body('branch').optional().notEmpty().withMessage('Branch cannot be empty.').trim(),
-    body('telephone').optional().isMobilePhone().withMessage('Valid telephone number is required.'),
-    body('address').optional().notEmpty().withMessage('Address cannot be empty.').trim(),
+    body('addressLine1').optional().notEmpty().withMessage('Address Line 1 cannot be empty.').trim(),
+    body('addressLine2').optional().trim(),
+    body('city').optional().notEmpty().withMessage('City cannot be empty.').trim(),
+    body('country').optional().notEmpty().withMessage('Country cannot be empty.').trim(),
+    body('postCode').optional().notEmpty().withMessage('Post code cannot be empty.').trim(),
     handleValidationErrors,
 ];
 
@@ -140,6 +172,7 @@ const validateEvent = [
 module.exports = {
     validateStartSubscription,
     validateLogin,
+    validateRegister,
     validateAnnouncement,
     validateRequestVerification,
     validateConfirmVerification,

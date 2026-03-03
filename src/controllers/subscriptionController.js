@@ -7,18 +7,23 @@ const User = require('../models/User');
 // ─── POST /start-subscription ─────────────────────────────────────────────────
 const startSubscription = async (req, res, next) => {
     try {
-        const {
-            title, firstName, lastName, gender, organization,
-            email, password, speciality, branch, telephone, address,
-        } = req.body;
-
-        const hashedPassword = password ? await bcrypt.hash(password, 12) : '';
+        const user = req.user;
 
         const profileData = {
-            title, firstName, lastName, gender, organization,
-            email: email.toLowerCase(),
-            hashedPassword,
-            speciality, branch, telephone, address,
+            title: user.title,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            gender: user.gender,
+            organization: user.organization,
+            email: user.email,
+            hashedPassword: user.password || '',
+            speciality: user.speciality,
+            telephone: user.telephone,
+            addressLine1: user.addressLine1,
+            addressLine2: user.addressLine2,
+            city: user.city,
+            country: user.country,
+            postCode: user.postCode,
         };
 
         const session = await createCheckoutSession(profileData);

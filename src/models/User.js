@@ -41,19 +41,28 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Speciality is required'],
         trim: true,
     },
-    branch: {
+    addressLine1: {
         type: String,
-        required: [true, 'Branch is required'],
+        required: [true, 'Address Line 1 is required'],
         trim: true,
     },
-    telephone: {
+    addressLine2: {
         type: String,
-        required: [true, 'Telephone is required'],
         trim: true,
     },
-    address: {
+    city: {
         type: String,
-        required: [true, 'Address is required'],
+        required: [true, 'City is required'],
+        trim: true,
+    },
+    country: {
+        type: String,
+        required: [true, 'Country is required'],
+        trim: true,
+    },
+    postCode: {
+        type: String,
+        required: [true, 'Post code is required'],
         trim: true,
     },
     role: {
@@ -67,8 +76,8 @@ const userSchema = new mongoose.Schema({
     },
     membershipStatus: {
         type: String,
-        enum: ['active', 'inactive'],
-        default: 'inactive',
+        enum: ['active', 'inactive', 'registered'],
+        default: 'registered',
     },
     memberId: {
         type: String,

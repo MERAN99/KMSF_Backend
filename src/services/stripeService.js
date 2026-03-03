@@ -15,9 +15,12 @@ const createCheckoutSession = async (profileData) => {
         email: profileData.email,
         hashedPassword: profileData.hashedPassword || '',
         speciality: profileData.speciality,
-        branch: profileData.branch,
+        addressLine1: profileData.addressLine1,
+        addressLine2: profileData.addressLine2 || '',
+        city: profileData.city,
+        country: profileData.country,
+        postCode: profileData.postCode,
         telephone: profileData.telephone,
-        address: profileData.address,
     };
 
     const session = await stripe.checkout.sessions.create({

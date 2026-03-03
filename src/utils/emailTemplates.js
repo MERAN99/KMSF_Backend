@@ -33,7 +33,6 @@ const welcomeEmailTemplate = (user) => ({
           <p><strong>Email:</strong> ${user.email}</p>
           <p><strong>Organization:</strong> ${user.organization}</p>
           <p><strong>Speciality:</strong> ${user.speciality}</p>
-          <p><strong>Branch:</strong> ${user.branch}</p>
           <p><strong>Membership Status:</strong> Active</p>
           <p><strong>Subscription End Date:</strong> ${new Date(user.subscriptionEndDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
         </div>
