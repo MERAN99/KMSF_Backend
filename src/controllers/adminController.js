@@ -258,13 +258,13 @@ const toggleBlockMember = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'Member not found.' });
         }
 
-        user.isBlocked = !user.isBlocked;
-        await user.save();
+        const updatedStatus = !user.isBlocked;
+        await User.findByIdAndUpdate(req.params.id, { isBlocked: updatedStatus });
 
         res.status(200).json({
             success: true,
-            message: `User ${user.isBlocked ? 'blocked' : 'unblocked'} successfully.`,
-            isBlocked: user.isBlocked,
+            message: `User ${updatedStatus ? 'blocked' : 'unblocked'} successfully.`,
+            isBlocked: updatedStatus,
         });
     } catch (error) {
         next(error);
