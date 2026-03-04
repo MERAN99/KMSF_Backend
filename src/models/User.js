@@ -26,6 +26,11 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Organization is required'],
         trim: true,
     },
+    profession: {
+        type: String,
+        required: [true, 'Profession is required'],
+        trim: true,
+    },
     email: {
         type: String,
         required: [true, 'Email is required'],

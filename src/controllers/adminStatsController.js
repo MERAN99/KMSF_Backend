@@ -10,6 +10,7 @@ const getAdminStats = async (req, res, next) => {
             roleCounts,
             countryCounts,
             organizationCounts,
+            professionCounts,
             blockStatusCounts
         ] = await Promise.all([
             User.countDocuments({ role: { $ne: 'admin' } }),
@@ -41,6 +42,14 @@ const getAdminStats = async (req, res, next) => {
                 { $limit: 5 }
             ]),
 
+            // Group by profession (top 5)
+            User.aggregate([
+                { $match: { role: { $ne: 'admin' }, profession: { $exists: true, $ne: '' } } },
+                { $group: { _id: '$profession', count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 10 }
+            ]),
+
             // Group by block status
             User.aggregate([
                 { $match: { role: { $ne: 'admin' } } },
@@ -62,6 +71,7 @@ const getAdminStats = async (req, res, next) => {
                 }, { admin: 0, member: 0 }),
                 countryCounts,
                 organizationCounts,
+                professionCounts,
                 blockCounts: {
                     blocked: blockStatusCounts.find(c => c._id === true)?.count || 0,
                     active: blockStatusCounts.find(c => c._id === false)?.count || 0
