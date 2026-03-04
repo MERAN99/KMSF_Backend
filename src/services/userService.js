@@ -6,18 +6,16 @@ const { generateMemberId } = require('../utils/memberId');
  * Called ONLY from checkout.session.completed webhook handler.
  */
 const createUserFromWebhook = async ({ metadata, stripeCustomerId, stripeSubscriptionId, subscriptionStartDate, subscriptionEndDate }) => {
-    // Prevent duplicate user creation (idempotency)
+    // Find existing user by email (covers registered-then-paying flow)
     const existing = await User.findOne({ email: metadata.email.toLowerCase() });
     if (existing) {
-        // Update Stripe IDs if missing (e.g. user existed as admin before)
-        if (!existing.stripeCustomerId) {
-            existing.stripeCustomerId = stripeCustomerId;
-            existing.stripeSubscriptionId = stripeSubscriptionId;
-            existing.membershipStatus = 'active';
-            existing.subscriptionStartDate = subscriptionStartDate;
-            existing.subscriptionEndDate = subscriptionEndDate;
-            await existing.save();
-        }
+        // Always update membership fields on every successful payment
+        existing.stripeCustomerId = stripeCustomerId;
+        existing.stripeSubscriptionId = stripeSubscriptionId;
+        existing.membershipStatus = 'active';
+        existing.subscriptionStartDate = subscriptionStartDate;
+        existing.subscriptionEndDate = subscriptionEndDate;
+        await existing.save();
         return existing;
     }
 
