@@ -18,6 +18,13 @@ const login = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'No membership found.' });
         }
 
+        if (user.isBlocked) {
+            return res.status(403).json({
+                success: false,
+                message: 'Your account has been blocked by an administrator. Please contact support.',
+            });
+        }
+
         if (user.membershipStatus === 'inactive') {
             return res.status(403).json({
                 success: false,

@@ -30,7 +30,8 @@ const { validateAnnouncement, validateCreateMember } = require('../middleware/va
 // All admin routes require authentication + admin role
 router.use(requireAuth, requireAdmin);
 
-// ─── Member CRUD ─────────────────────────────────────────────────────────────
+// ─── Member CRUD & Stats ──────────────────────────────────────────────────────
+router.get('/stats', require('../controllers/adminStatsController').getAdminStats);
 router.get('/members', getMembers);
 router.get('/member/:id', getMember);
 router.post('/member', validateCreateMember, createMember);
