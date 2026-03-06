@@ -284,6 +284,7 @@ const register = async (req, res, next) => {
 
         const user = new User({
             title, firstName, lastName, gender, organization,
+            profession,
             email: email.toLowerCase(),
             password: hashedPassword,
             speciality: resolvedSpeciality, telephone,
