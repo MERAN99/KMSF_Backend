@@ -11,6 +11,7 @@ const subscriptionRouter = require('./routes/subscription');
 const memberRouter = require('./routes/member');
 const adminRouter = require('./routes/admin');
 const eventRouter = require('./routes/event');
+const donationRouter = require('./routes/donation');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -102,6 +103,7 @@ app.use('/', subscriptionRouter);         // /start-subscription, /renew-subscri
 app.use('/', memberRouter);               // /member/subscription-status
 app.use('/admin', adminRouter);           // /admin/*
 app.use('/events', eventRouter);          // /events/*
+app.use('/donations', donationRouter);    // /donations/*
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

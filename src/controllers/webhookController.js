@@ -1,6 +1,7 @@
 const { constructWebhookEvent } = require('../services/stripeService');
 const { createUserFromWebhook, findByStripeCustomerId, activateMembership, deactivateMembership } = require('../services/userService');
 const { sendWelcomeEmail } = require('../services/emailService');
+const Donation = require('../models/Donation');
 
 /**
  * POST /webhook
@@ -52,6 +53,24 @@ const handleWebhook = async (req, res) => {
 
 // ─── checkout.session.completed ───────────────────────────────────────────────
 const handleCheckoutCompleted = async (session) => {
+    // Handle one-time donation payments
+    if (session.mode === 'payment' && session.metadata?.isDonation === 'true') {
+        try {
+            await Donation.create({
+                userId: session.metadata.userId !== 'anonymous' ? session.metadata.userId : null,
+                donorName: session.metadata.donorName || 'Anonymous',
+                amount: session.amount_total / 100,
+                currency: session.currency.toUpperCase(),
+                stripeSessionId: session.id,
+                paymentStatus: session.payment_status === 'paid' ? 'completed' : 'pending',
+            });
+            console.log(`Donation of ${(session.amount_total / 100).toFixed(2)} ${session.currency.toUpperCase()} recorded.`);
+        } catch (error) {
+            console.error('Error saving donation:', error);
+        }
+        return;
+    }
+
     if (session.mode !== 'subscription') return;
 
     const { metadata, customer, subscription } = session;

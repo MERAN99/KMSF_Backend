@@ -76,6 +76,43 @@ const createRenewalCheckoutSession = async (customerId, email) => {
 };
 
 /**
+ * Creates a new Stripe Checkout Session for a one-time donation.
+ */
+const createDonationCheckoutSession = async (amount, currency, userId, donorName) => {
+    // Stripe expects amounts in cents/pence, so amount * 100
+    const metadata = {
+        isDonation: 'true',
+        userId: userId ? userId.toString() : 'anonymous',
+        donorName: donorName || 'Anonymous',
+    };
+
+    const baseUrl = process.env.STRIPE_CANCEL_URL.replace(/\/membership$/, '');
+
+    const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        payment_method_types: ['card'],
+        line_items: [
+            {
+                price_data: {
+                    currency: currency || 'USD',
+                    product_data: {
+                        name: 'KMSF Donation',
+                        description: 'One-time donation to the Kurdistan Medical & Scientific Foundation',
+                    },
+                    unit_amount: Math.round(amount * 100),
+                },
+                quantity: 1,
+            },
+        ],
+        metadata,
+        success_url: `${baseUrl}/donations?donation=success`,
+        cancel_url: `${baseUrl}/donations?donation=canceled`,
+    });
+
+    return session;
+};
+
+/**
  * Verifies Stripe webhook signature and constructs the event.
  */
 const constructWebhookEvent = (rawBody, signature) => {
@@ -90,5 +127,6 @@ module.exports = {
     createCheckoutSession,
     createBillingPortalSession,
     createRenewalCheckoutSession,
+    createDonationCheckoutSession,
     constructWebhookEvent,
 };
