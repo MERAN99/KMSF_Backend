@@ -1,5 +1,5 @@
 const express = require('express');
-const { createDonationSession, getAdminDonations } = require('../controllers/donationController');
+const { createDonationSession, confirmDonation, getAdminDonations } = require('../controllers/donationController');
 const { requireAuth } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/requireAdmin');
 
@@ -27,5 +27,8 @@ router.post('/create-session', function (req, res, next) {
 
 // Admin ONLY route to get donations list
 router.get('/admin', requireAuth, requireAdmin, getAdminDonations);
+
+// Public route to confirm a completed donation by session ID (called by frontend on success redirect)
+router.post('/confirm', confirmDonation);
 
 module.exports = router;
