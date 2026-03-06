@@ -57,7 +57,7 @@ const validateRegister = [
     body('gender').notEmpty().withMessage('Gender is required.').trim(),
     body('email').isEmail().withMessage('Valid email is required.').trim().toLowerCase(),
     body('profession').notEmpty().withMessage('Profession is required.').trim(),
-    body('speciality').notEmpty().withMessage('Speciality is required.').trim(),
+    body('speciality').optional().trim(),
     body('telephone').notEmpty().withMessage('Telephone is required.').trim(),
     body('addressLine1').notEmpty().withMessage('Address Line 1 is required.').trim(),
     body('addressLine2').optional().trim(),

@@ -266,7 +266,7 @@ const register = async (req, res, next) => {
     try {
         const {
             title, firstName, lastName, gender, organization,
-            email, password, speciality, telephone,
+            email, password, profession, speciality, telephone,
             addressLine1, addressLine2, city, country, postCode,
         } = req.body;
 
@@ -279,11 +279,14 @@ const register = async (req, res, next) => {
         const hashedPassword = await bcrypt.hash(password, 12);
         const memberId = await generateMemberId();
 
+        // Use profession as the speciality value (frontend may send either or both)
+        const resolvedSpeciality = speciality || profession || '';
+
         const user = new User({
             title, firstName, lastName, gender, organization,
             email: email.toLowerCase(),
             password: hashedPassword,
-            speciality, telephone,
+            speciality: resolvedSpeciality, telephone,
             addressLine1, addressLine2, city, country, postCode,
             role: 'member',
             membershipStatus: 'registered',
