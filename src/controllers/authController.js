@@ -325,4 +325,170 @@ const register = async (req, res, next) => {
     }
 };
 
-module.exports = { login, requestVerification, confirmVerification, changePassword, forgotPassword, verifyResetCode, resetPassword, register };
+// ─── GET /profile ──────────────────────────────────────────────────────────
+const getProfile = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+        res.status(200).json({
+            success: true,
+            user: {
+                id: user._id,
+                memberId: user.memberId,
+                title: user.title,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                gender: user.gender,
+                organization: user.organization,
+                profession: user.profession,
+                speciality: user.speciality,
+                email: user.email,
+                addressLine1: user.addressLine1,
+                addressLine2: user.addressLine2,
+                city: user.city,
+                country: user.country,
+                postCode: user.postCode,
+                role: user.role,
+                membershipStatus: user.membershipStatus,
+                subscriptionEndDate: user.subscriptionEndDate,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ─── PATCH /update-profile ────────────────────────────────────────────────────
+const updateProfile = async (req, res, next) => {
+    try {
+        const allowedFields = [
+            'title', 'firstName', 'lastName', 'gender',
+            'organization', 'profession', 'speciality',
+            'addressLine1', 'addressLine2', 'city', 'country', 'postCode',
+        ];
+
+        const updates = {};
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) updates[field] = req.body[field];
+        });
+
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+
+        if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile updated successfully.',
+            user: {
+                id: user._id,
+                memberId: user.memberId,
+                title: user.title,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                gender: user.gender,
+                organization: user.organization,
+                profession: user.profession,
+                speciality: user.speciality,
+                email: user.email,
+                addressLine1: user.addressLine1,
+                addressLine2: user.addressLine2,
+                city: user.city,
+                country: user.country,
+                postCode: user.postCode,
+                role: user.role,
+                membershipStatus: user.membershipStatus,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ─── POST /request-email-change ───────────────────────────────────────────────
+const requestEmailChange = async (req, res, next) => {
+    try {
+        const { newEmail } = req.body;
+        if (!newEmail) return res.status(400).json({ success: false, message: 'New email is required.' });
+
+        // Check if email is already taken
+        const existing = await User.findOne({ email: newEmail.toLowerCase() });
+        if (existing) {
+            return res.status(409).json({ success: false, message: 'This email is already in use.' });
+        }
+
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        const VerificationToken = require('../models/VerificationToken');
+        await VerificationToken.findOneAndUpdate(
+            { email: newEmail.toLowerCase() },
+            { code, expiresAt, verified: false },
+            { upsert: true, new: true }
+        );
+
+        const { sendOTPEmail } = require('../services/emailService');
+        await sendOTPEmail(newEmail, code);
+
+        res.status(200).json({
+            success: true,
+            message: 'Verification code sent to your new email address.',
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ─── PATCH /confirm-email-change ─────────────────────────────────────────────
+const confirmEmailChange = async (req, res, next) => {
+    try {
+        const { newEmail, code } = req.body;
+        if (!newEmail || !code) {
+            return res.status(400).json({ success: false, message: 'New email and code are required.' });
+        }
+
+        const VerificationToken = require('../models/VerificationToken');
+        const token = await VerificationToken.findOne({
+            email: newEmail.toLowerCase(),
+            code: String(code),
+            expiresAt: { $gt: new Date() },
+        });
+
+        if (!token) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired verification code.' });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { $set: { email: newEmail.toLowerCase() } },
+            { new: true }
+        );
+
+        if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+        await VerificationToken.deleteOne({ _id: token._id });
+
+        res.status(200).json({
+            success: true,
+            message: 'Email updated successfully.',
+            user: {
+                id: user._id,
+                memberId: user.memberId,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+                membershipStatus: user.membershipStatus,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { login, requestVerification, confirmVerification, changePassword, forgotPassword, verifyResetCode, resetPassword, register, getProfile, updateProfile, requestEmailChange, confirmEmailChange };
+

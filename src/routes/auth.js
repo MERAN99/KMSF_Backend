@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { login, requestVerification, confirmVerification, changePassword, forgotPassword, verifyResetCode, resetPassword, register } = require('../controllers/authController');
+const { login, requestVerification, confirmVerification, changePassword, forgotPassword, verifyResetCode, resetPassword, register, getProfile, updateProfile, requestEmailChange, confirmEmailChange } = require('../controllers/authController');
 const {
     validateLogin,
     validateRegister,
@@ -35,5 +35,17 @@ router.post('/verify-reset-code', validateVerifyResetCode, verifyResetCode);
 
 // POST /reset-password
 router.post('/reset-password', validateResetPassword, resetPassword);
+
+// GET /profile
+router.get('/profile', requireAuth, getProfile);
+
+// PATCH /update-profile
+router.patch('/update-profile', requireAuth, updateProfile);
+
+// POST /request-email-change
+router.post('/request-email-change', requireAuth, requestEmailChange);
+
+// PATCH /confirm-email-change
+router.patch('/confirm-email-change', requireAuth, confirmEmailChange);
 
 module.exports = router;
