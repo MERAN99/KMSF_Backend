@@ -43,7 +43,6 @@ const userSchema = new mongoose.Schema({
     },
     speciality: {
         type: String,
-        required: [true, 'Speciality is required'],
         trim: true,
     },
     addressLine1: {
