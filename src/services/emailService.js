@@ -100,4 +100,31 @@ const sendEventNotificationEmail = (recipients, event) => {
     return { status: 'processing', total: recipients.length };
 };
 
-module.exports = { sendWelcomeEmail, sendAnnouncementEmail, sendOTPEmail, sendEventNotificationEmail };
+/**
+ * Sends a contact us message from a user to info@kmsf.org.
+ */
+const sendContactEmail = async (name, email, subject, message) => {
+    try {
+        const html = `
+            <h3>New Contact Message from KMSF Website</h3>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Message:</strong></p>
+            <p>${message.replace(/\n/g, '<br>')}</p>
+        `;
+        await transporter.sendMail({
+            from: process.env.EMAIL_FROM,
+            to: 'info@kmsf.org', // Send to KMSF directly
+            replyTo: email,      // So they can reply directly to the user
+            subject: `Contact Form: ${subject} - ${name}`,
+            html,
+        });
+        console.log(`Contact message sent from ${email}`);
+    } catch (error) {
+        console.error(`Failed to send contact message from ${email}: ${error.message}`);
+        throw new Error('Failed to send message.');
+    }
+};
+
+module.exports = { sendContactEmail, sendWelcomeEmail, sendAnnouncementEmail, sendOTPEmail, sendEventNotificationEmail };

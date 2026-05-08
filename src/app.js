@@ -12,6 +12,7 @@ const memberRouter = require('./routes/member');
 const adminRouter = require('./routes/admin');
 const eventRouter = require('./routes/event');
 const donationRouter = require('./routes/donation');
+const contactRouter = require('./routes/contact');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -104,6 +105,7 @@ app.use('/', memberRouter);               // /member/subscription-status
 app.use('/admin', adminRouter);           // /admin/*
 app.use('/events', eventRouter);          // /events/*
 app.use('/donations', donationRouter);    // /donations/*
+app.use('/contact', contactRouter);       // /contact/*
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
