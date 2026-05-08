@@ -5,8 +5,8 @@ const stripe = require('../config/stripe');
  * All profile data is embedded in metadata so webhook can create the user.
  */
 const createCheckoutSession = async (profileData) => {
-    // Stripe metadata values must be strings
-    const metadata = {
+    // Stripe metadata values must be strings and cannot be null
+    const rawMetadata = {
         title: profileData.title,
         firstName: profileData.firstName,
         lastName: profileData.lastName,
@@ -16,12 +16,16 @@ const createCheckoutSession = async (profileData) => {
         hashedPassword: profileData.hashedPassword || '',
         speciality: profileData.speciality,
         addressLine1: profileData.addressLine1,
-        addressLine2: profileData.addressLine2 || '',
+        addressLine2: profileData.addressLine2,
         city: profileData.city,
         country: profileData.country,
         postCode: profileData.postCode,
         telephone: profileData.telephone,
     };
+
+    const metadata = Object.fromEntries(
+        Object.entries(rawMetadata).map(([key, value]) => [key, value == null ? '' : String(value)])
+    );
 
     const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
@@ -78,12 +82,13 @@ const createRenewalCheckoutSession = async (customerId, email) => {
 /**
  * Creates a new Stripe Checkout Session for a one-time donation.
  */
-const createDonationCheckoutSession = async (amount, currency, userId, donorName) => {
+const createDonationCheckoutSession = async (amount, currency, userId, donorName, message = '') => {
     // Stripe expects amounts in cents/pence, so amount * 100
     const metadata = {
         isDonation: 'true',
         userId: userId ? userId.toString() : 'anonymous',
         donorName: donorName || 'Anonymous',
+        message: message || '',
     };
 
     const baseUrl = process.env.STRIPE_CANCEL_URL.replace(/\/membership$/, '');
@@ -94,7 +99,7 @@ const createDonationCheckoutSession = async (amount, currency, userId, donorName
         line_items: [
             {
                 price_data: {
-                    currency: currency || 'USD',
+                    currency: currency || 'GBP',
                     product_data: {
                         name: 'KMSF Donation',
                         description: 'One-time donation to the Kurdistan Medical & Scientific Foundation',

@@ -7,22 +7,28 @@ const stripe = require('../config/stripe');
  */
 const createDonationSession = async (req, res, next) => {
     try {
-        const { amount, currency } = req.body;
+        const { amount, currency, isAnonymous, message } = req.body;
 
         if (!amount || isNaN(amount) || amount <= 0) {
             return res.status(400).json({ success: false, message: 'Invalid donation amount.' });
         }
 
-        // Check if user is logged in
         let userId = null;
         let donorName = 'Anonymous';
 
-        if (req.user) {
+        // If user is logged in AND not donating anonymously, use their name
+        if (req.user && !isAnonymous) {
             userId = req.user._id;
             donorName = `${req.user.firstName} ${req.user.lastName}`;
         }
 
-        const session = await createDonationCheckoutSession(amount, currency || 'USD', userId, donorName);
+        const session = await createDonationCheckoutSession(
+            amount,
+            currency || 'GBP',
+            userId,
+            donorName,
+            message || ''
+        );
 
         res.status(200).json({
             success: true,
@@ -68,6 +74,7 @@ const confirmDonation = async (req, res, next) => {
             currency: session.currency.toUpperCase(),
             stripeSessionId: session.id,
             paymentStatus: 'completed',
+            message: session.metadata?.message || '',
         });
 
         console.log(`Donation confirmed and saved: ${donation.amount} ${donation.currency} from ${donation.donorName}`);
@@ -75,6 +82,56 @@ const confirmDonation = async (req, res, next) => {
         res.status(200).json({ success: true, message: 'Donation recorded successfully.', data: donation });
     } catch (error) {
         console.error('Error confirming donation:', error);
+        next(error);
+    }
+};
+
+/**
+ * Public: get donations that have a non-empty message
+ * Returns only safe fields: donorName, message, createdAt
+ */
+const getDonationMessages = async (req, res, next) => {
+    try {
+        const messages = await Donation.find({
+            paymentStatus: 'completed',
+            message: { $exists: true, $ne: '' },
+            showPublicly: true,   // Only admin-featured messages are shown publicly
+        })
+            .sort({ createdAt: -1 })
+            .select('donorName message createdAt')
+            .limit(50)
+            .lean();
+
+        res.status(200).json({
+            success: true,
+            count: messages.length,
+            data: messages,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Admin: toggle whether a donation message is shown publicly
+ */
+const toggleDonationMessage = async (req, res, next) => {
+    try {
+        const donation = await Donation.findById(req.params.id);
+        if (!donation) {
+            return res.status(404).json({ success: false, message: 'Donation not found.' });
+        }
+        if (!donation.message) {
+            return res.status(400).json({ success: false, message: 'This donation has no message.' });
+        }
+        donation.showPublicly = !donation.showPublicly;
+        await donation.save();
+        res.status(200).json({
+            success: true,
+            showPublicly: donation.showPublicly,
+            message: donation.showPublicly ? 'Message is now featured publicly.' : 'Message hidden from public.',
+        });
+    } catch (error) {
         next(error);
     }
 };
@@ -101,5 +158,7 @@ const getAdminDonations = async (req, res, next) => {
 module.exports = {
     createDonationSession,
     confirmDonation,
+    getDonationMessages,
+    toggleDonationMessage,
     getAdminDonations,
 };

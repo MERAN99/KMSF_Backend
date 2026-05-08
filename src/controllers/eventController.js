@@ -3,7 +3,7 @@ const User = require('../models/User');
 const { sendEventNotificationEmail } = require('../services/emailService');
 
 // @desc    Get all events
-// @route   GET /api/events
+// @route   GET /events
 // @access  Public
 exports.getEvents = async (req, res, next) => {
     try {
@@ -19,7 +19,7 @@ exports.getEvents = async (req, res, next) => {
 };
 
 // @desc    Get single event
-// @route   GET /api/events/:id
+// @route   GET /events/:id
 // @access  Public
 exports.getEvent = async (req, res, next) => {
     try {
@@ -41,17 +41,18 @@ exports.getEvent = async (req, res, next) => {
     }
 };
 
-// @desc    Create new event
-// @route   POST /api/admin/event
+// @desc    Create new event (supports multiple images)
+// @route   POST /admin/event
 // @access  Private/Admin
 exports.createEvent = async (req, res, next) => {
     try {
-        const { title, date, time, location, description, organizer, prices, isPinned } = req.body;
-        const eventData = { title, date, time, location, description, organizer, isPinned };
+        const { title, date, time, location, description, category, prices } = req.body;
 
-        // Handle image upload (Cloudinary returns full URL in req.file.path)
-        if (req.file) {
-            eventData.image = req.file.path;
+        const eventData = { title, date, time, location, description, category };
+
+        // Handle multiple uploaded images — req.files is an array from upload.array()
+        if (req.files && req.files.length > 0) {
+            eventData.images = req.files.map(f => f.path); // Cloudinary returns full URL in path
         }
 
         // Handle prices if sent as a JSON string from FormData
@@ -70,20 +71,31 @@ exports.createEvent = async (req, res, next) => {
     }
 };
 
-// @desc    Update event
-// @route   PUT /api/admin/event/:id
+// @desc    Update event (supports multiple images — new uploads are merged with existing)
+// @route   PUT /admin/event/:id
 // @access  Private/Admin
 exports.updateEvent = async (req, res, next) => {
     try {
-        const { title, date, time, location, description, organizer, prices, isPinned } = req.body;
-        const eventData = { title, date, time, location, description, organizer, isPinned };
+        const { title, date, time, location, description, category, prices, existingImages } = req.body;
 
-        // Handle image upload (Cloudinary returns full URL in req.file.path)
-        if (req.file) {
-            eventData.image = req.file.path;
+        const eventData = { title, date, time, location, description, category };
+
+        // Existing images kept by the client (they send back what they want to keep)
+        let kept = [];
+        if (existingImages) {
+            kept = typeof existingImages === 'string' ? JSON.parse(existingImages) : existingImages;
         }
 
-        // Handle prices if sent as a JSON string from FormData
+        // New uploads
+        let newUploads = [];
+        if (req.files && req.files.length > 0) {
+            newUploads = req.files.map(f => f.path);
+        }
+
+        // Merge: keep selected existing + add new uploads
+        eventData.images = [...kept, ...newUploads];
+
+        // Handle prices
         if (prices) {
             eventData.prices = typeof prices === 'string' ? JSON.parse(prices) : prices;
         }
@@ -110,7 +122,7 @@ exports.updateEvent = async (req, res, next) => {
 };
 
 // @desc    Delete event
-// @route   DELETE /api/admin/event/:id
+// @route   DELETE /admin/event/:id
 // @access  Private/Admin
 exports.deleteEvent = async (req, res, next) => {
     try {
@@ -131,8 +143,9 @@ exports.deleteEvent = async (req, res, next) => {
         next(error);
     }
 };
+
 // @desc    Notify members about an event
-// @route   POST /api/admin/event/:id/notify
+// @route   POST /admin/event/:id/notify
 // @access  Private/Admin
 exports.notifyMembers = async (req, res, next) => {
     try {
@@ -159,7 +172,7 @@ exports.notifyMembers = async (req, res, next) => {
             });
         }
 
-        // Send emails (Background)
+        // Send emails in background
         sendEventNotificationEmail(recipients, event);
 
         res.status(200).json({

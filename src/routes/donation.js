@@ -1,5 +1,5 @@
 const express = require('express');
-const { createDonationSession, confirmDonation, getAdminDonations } = require('../controllers/donationController');
+const { createDonationSession, confirmDonation, getDonationMessages, toggleDonationMessage, getAdminDonations } = require('../controllers/donationController');
 const { requireAuth } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/requireAdmin');
 
@@ -25,8 +25,14 @@ router.post('/create-session', function (req, res, next) {
     });
 });
 
+// Public route: returns messages left by donors (name + message + date only)
+router.get('/messages', getDonationMessages);
+
 // Admin ONLY route to get donations list
 router.get('/admin', requireAuth, requireAdmin, getAdminDonations);
+
+// Admin ONLY: toggle whether a specific donation message is shown publicly
+router.patch('/:id/toggle-message', requireAuth, requireAdmin, toggleDonationMessage);
 
 // Public route to confirm a completed donation by session ID (called by frontend on success redirect)
 router.post('/confirm', confirmDonation);

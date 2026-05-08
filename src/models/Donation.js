@@ -29,6 +29,15 @@ const donationSchema = new mongoose.Schema({
         enum: ['pending', 'completed', 'failed'],
         default: 'pending',
     },
+    message: {
+        type: String,
+        default: '',
+        trim: true,
+    },
+    showPublicly: {
+        type: Boolean,
+        default: false, // Admin must explicitly feature a message to show it publicly
+    },
 }, {
     timestamps: true,
 });

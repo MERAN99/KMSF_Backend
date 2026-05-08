@@ -46,8 +46,8 @@ router.patch('/member/:id/toggle-block', toggleBlockMember);
 
 // ─── Event Management ─────────────────────────────────────────────────────────
 router.get('/events', getEvents);
-router.post('/event', upload.single('image'), createEvent);
-router.put('/event/:id', upload.single('image'), updateEvent);
+router.post('/event', upload.array('images', 10), createEvent);
+router.put('/event/:id', upload.array('images', 10), updateEvent);
 router.delete('/event/:id', deleteEvent);
 router.post('/event/:id/notify', notifyMembers);
 

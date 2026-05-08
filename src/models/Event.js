@@ -15,8 +15,10 @@ const eventSchema = new mongoose.Schema({
         type: String,
         trim: true,
     },
-    image: {
-        type: String, // URL or filename
+    // Multiple images stored as an array of URLs (Cloudinary)
+    images: {
+        type: [String],
+        default: [],
     },
     date: {
         type: Date,
@@ -41,5 +43,14 @@ const eventSchema = new mongoose.Schema({
         default: Date.now,
     },
 });
+
+// Virtual: expose first image as `image` for backwards-compat with the events page
+eventSchema.virtual('image').get(function () {
+    return this.images && this.images.length > 0 ? this.images[0] : null;
+});
+
+// Ensure virtuals are included when converting to JSON/Object
+eventSchema.set('toJSON', { virtuals: true });
+eventSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('Event', eventSchema);
