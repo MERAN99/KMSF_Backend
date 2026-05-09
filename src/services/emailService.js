@@ -1,5 +1,5 @@
 const transporter = require('../config/email');
-const { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, eventNotificationTemplate } = require('../utils/emailTemplates');
+const { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, eventNotificationTemplate, registrationReminderTemplate } = require('../utils/emailTemplates');
 
 /**
  * Sends a welcome email to a newly created member.
@@ -115,7 +115,7 @@ const sendContactEmail = async (name, email, subject, message) => {
         `;
         await transporter.sendMail({
             from: process.env.EMAIL_FROM,
-            to: 'info@kmsf.org', // Send to KMSF directly
+            to: 'Info@kmsf.org.uk', // Send to KMSF directly
             replyTo: email,      // So they can reply directly to the user
             subject: `Contact Form: ${subject} - ${name}`,
             html,
@@ -127,4 +127,17 @@ const sendContactEmail = async (name, email, subject, message) => {
     }
 };
 
-module.exports = { sendContactEmail, sendWelcomeEmail, sendAnnouncementEmail, sendOTPEmail, sendEventNotificationEmail };
+/**
+ * Sends registration reminder emails to multiple recipients in the background.
+ */
+const sendBulkRegistrationReminderEmail = (recipients) => {
+    const { subject, html } = registrationReminderTemplate();
+
+    // Fire and forget (Background processing)
+    processInBatches(recipients, subject, html)
+        .catch(err => console.error('Bulk registration reminder failed:', err));
+
+    return { status: 'processing', total: recipients.length };
+};
+
+module.exports = { sendContactEmail, sendWelcomeEmail, sendAnnouncementEmail, sendOTPEmail, sendEventNotificationEmail, sendBulkRegistrationReminderEmail };

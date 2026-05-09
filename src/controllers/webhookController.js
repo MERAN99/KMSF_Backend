@@ -18,15 +18,10 @@ const handleWebhook = async (req, res) => {
 
     let event;
     try {
-        console.log('Incoming webhook signature:', sig);
         event = constructWebhookEvent(req.body, sig);
-        console.log('Webhook event constructed successfully:', event.type);
+        console.log('Webhook event received:', event.type);
     } catch (err) {
-        console.error(`Webhook signature verification failed: ${err.message}`, {
-            bodyPreview: typeof req.body === 'string' ? req.body.substring(0, 100) : 'Not a string',
-            sigLength: sig ? sig.length : 'No signature',
-            secretLength: process.env.STRIPE_WEBHOOK_SECRET ? process.env.STRIPE_WEBHOOK_SECRET.length : 'No secret configured'
-        });
+        console.error(`Webhook signature verification failed: ${err.message}`);
         return res.status(400).json({ error: `Webhook Error: ${err.message}` });
     }
 

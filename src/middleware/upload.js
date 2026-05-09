@@ -12,9 +12,12 @@ const storage = new CloudinaryStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-    if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF|webp|WEBP)$/)) {
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedExtensions = /\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF|webp|WEBP)$/;
+
+    if (!allowedMimeTypes.includes(file.mimetype) || !file.originalname.match(allowedExtensions)) {
         req.fileValidationError = 'Only image files are allowed!';
-        return cb(new Error('Only image files are allowed!'), false);
+        return cb(new Error('Only image files (jpg, png, gif, webp) are allowed!'), false);
     }
     cb(null, true);
 };

@@ -66,7 +66,7 @@ const limiter = rateLimit({
     legacyHeaders: false,
     message: { success: false, message: 'Too many requests from this IP. Please try again later.' },
 });
-app.use('/api/', limiter); // Apply to all /api routes if applicable
+app.use(limiter); // Apply globally to ALL routes
 
 // ─── Stricter rate limit for auth endpoints ────────────────────────────────────
 const authLimiter = rateLimit({
@@ -92,7 +92,6 @@ app.get('/health', (req, res) => {
         success: true,
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV,
     });
 });
 
@@ -105,7 +104,15 @@ app.use('/', memberRouter);               // /member/subscription-status
 app.use('/admin', adminRouter);           // /admin/*
 app.use('/events', eventRouter);          // /events/*
 app.use('/donations', donationRouter);    // /donations/*
-app.use('/contact', contactRouter);       // /contact/*
+// Strict rate limit for contact form — prevents email flooding
+const contactLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5, // Only 5 contact form submissions per hour per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: 'Too many messages sent. Please try again later.' },
+});
+app.use('/contact', contactLimiter, contactRouter);  // /contact/*
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

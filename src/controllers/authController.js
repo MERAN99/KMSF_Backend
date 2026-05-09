@@ -12,10 +12,10 @@ const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
-        // Include password field (hidden by default)
+        // Use generic error for non-existent users to prevent user enumeration
         const user = await findByEmail(email);
         if (!user) {
-            return res.status(404).json({ success: false, message: 'No membership found.' });
+            return res.status(401).json({ success: false, message: 'Invalid credentials.' });
         }
 
         if (user.isBlocked) {
@@ -127,8 +127,16 @@ const confirmVerification = async (req, res, next) => {
 const changePassword = async (req, res, next) => {
     try {
         const { currentPassword, newPassword } = req.body;
-        const userId = req.user.id;
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Current password and new password are required.' });
+        }
+        // Validate new password strength server-side
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!passwordRegex.test(newPassword)) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.' });
+        }
         const User = require('../models/User');
+        const userId = req.user.id;
         const user = await User.findById(userId).select('+password');
 
         const isMatch = await bcrypt.compare(currentPassword, user.password);
@@ -155,12 +163,9 @@ const forgotPassword = async (req, res, next) => {
         const { email } = req.body;
         const user = await findByEmail(email);
 
+        // Return generic success even when email not found (prevents user enumeration)
         if (!user) {
-            return res.status(404).json({ success: false, message: 'No account found with this email.' });
-        }
-
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'No account found with this email.' });
+            return res.status(200).json({ success: true, message: 'A reset code has been sent to your email.' });
         }
 
         // Generate 6-digit OTP
@@ -414,6 +419,12 @@ const requestEmailChange = async (req, res, next) => {
     try {
         const { newEmail } = req.body;
         if (!newEmail) return res.status(400).json({ success: false, message: 'New email is required.' });
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(newEmail)) {
+            return res.status(400).json({ success: false, message: 'Please provide a valid email address.' });
+        }
 
         // Check if email is already taken
         const existing = await User.findOne({ email: newEmail.toLowerCase() });

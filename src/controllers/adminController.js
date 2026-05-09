@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { generateMemberId } = require('../utils/memberId');
 const { getRemainingDays } = require('../utils/subscriptionDays');
+const { sendBulkRegistrationReminderEmail } = require('../services/emailService');
 
 // ─── GET /admin/members ───────────────────────────────────────────────────────
 const getMembers = async (req, res, next) => {
@@ -11,34 +12,47 @@ const getMembers = async (req, res, next) => {
             limit = 20,
             status,
             role,
+            organization,
             search,
             sortBy = 'createdAt',
             sortOrder = 'desc',
         } = req.query;
 
         const filter = { role: { $ne: 'admin' } };
-        if (status) filter.membershipStatus = status;
-        if (role) filter.role = role;
+        
+        // Build base conditions
+        const conditions = [{ role: { $ne: 'admin' } }];
+        if (status) conditions.push({ membershipStatus: status });
+        if (organization) conditions.push({ organization: organization });
+        
         if (search) {
-            filter.$and = [
-                { role: { $ne: 'admin' } },
-                {
-                    $or: [
-                        { firstName: { $regex: search, $options: 'i' } },
-                        { lastName: { $regex: search, $options: 'i' } },
-                        { email: { $regex: search, $options: 'i' } },
-                        { memberId: { $regex: search, $options: 'i' } },
-                        { organization: { $regex: search, $options: 'i' } },
-                    ]
-                }
-            ];
+            conditions.push({
+                $or: [
+                    { firstName: { $regex: search, $options: 'i' } },
+                    { lastName: { $regex: search, $options: 'i' } },
+                    { email: { $regex: search, $options: 'i' } },
+                    { memberId: { $regex: search, $options: 'i' } },
+                    { organization: { $regex: search, $options: 'i' } },
+                ]
+            });
+        }
+        
+        // Merge all conditions
+        if (conditions.length > 1) {
+            filter.$and = conditions;
+            delete filter.role; // role condition is already inside $and
+        } else if (status) {
+            filter.membershipStatus = status;
         }
 
-        const skip = (parseInt(page) - 1) * parseInt(limit);
+        // Clamp pagination params to prevent resource exhaustion
+        const safePage = Math.max(1, parseInt(page));
+        const safeLimit = Math.min(100, Math.max(1, parseInt(limit)));
+        const skip = (safePage - 1) * safeLimit;
         const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
 
         const [members, total] = await Promise.all([
-            User.find(filter).sort(sort).skip(skip).limit(parseInt(limit)).lean(),
+            User.find(filter).sort(sort).skip(skip).limit(safeLimit).lean(),
             User.countDocuments(filter),
         ]);
 
@@ -53,9 +67,9 @@ const getMembers = async (req, res, next) => {
             data: enriched,
             pagination: {
                 total,
-                page: parseInt(page),
-                limit: parseInt(limit),
-                pages: Math.ceil(total / parseInt(limit)),
+                page: safePage,
+                limit: safeLimit,
+                pages: Math.ceil(total / safeLimit),
             },
         });
     } catch (error) {
@@ -271,6 +285,35 @@ const toggleBlockMember = async (req, res, next) => {
     }
 };
 
+// ─── POST /admin/member/bulk-email ───────────────────────────────────────────
+const sendBulkRegistrationReminder = async (req, res, next) => {
+    try {
+        const { userIds } = req.body;
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ success: false, message: 'Please provide an array of userIds.' });
+        }
+        // Cap at 500 to prevent abuse
+        if (userIds.length > 500) {
+            return res.status(400).json({ success: false, message: 'Maximum 500 users can be emailed at once.' });
+        }
+
+        const users = await User.find({ _id: { $in: userIds } });
+        if (users.length === 0) {
+            return res.status(404).json({ success: false, message: 'No valid users found.' });
+        }
+
+        // Fire and forget email service
+        sendBulkRegistrationReminderEmail(users);
+
+        res.status(200).json({
+            success: true,
+            message: `Registration reminder emails are being sent to ${users.length} users in the background.`,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getMembers,
     getMember,
@@ -281,4 +324,5 @@ module.exports = {
     resetPassword,
     regenerateMemberId,
     toggleBlockMember,
+    sendBulkRegistrationReminder,
 };

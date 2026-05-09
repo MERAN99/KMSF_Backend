@@ -152,4 +152,40 @@ const eventNotificationTemplate = (event) => ({
   `,
 });
 
-module.exports = { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, eventNotificationTemplate };
+const registrationReminderTemplate = () => ({
+  subject: `KMSF: Please Complete Your Registration`,
+  html: `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Registration</title>
+    <style>
+      body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+      .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+      .header { background: #1a3c5e; padding: 32px; text-align: center; }
+      .header h1 { color: #fff; margin: 0; font-size: 24px; }
+      .body { padding: 32px; color: #333; line-height: 1.7; }
+      .cta-button { display: inline-block; background: #C8A441; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold; margin-top: 20px; }
+      .footer { background: #f4f4f4; text-align: center; padding: 16px; font-size: 12px; color: #888; }
+    </style>
+    </head>
+    <body>
+    <div class="container">
+      <div class="header"><h1>Action Required: Complete Registration</h1></div>
+      <div class="body">
+        <p>Hello,</p>
+        <p>We noticed that you have created an account on the KMSF platform, but your membership is not yet fully active.</p>
+        <p>To gain full access to exclusive events, networking opportunities, and member benefits, please log in and complete your membership registration by subscribing.</p>
+        <div style="text-align: center;">
+          <a href="https://kmsf.org.uk/login" class="cta-button">Log in to Complete Registration</a>
+        </div>
+        <p style="margin-top:32px;">If you have any questions or need assistance, feel free to reply to this email.</p>
+        <p>Best regards,<br><strong>The KMSF Team</strong></p>
+      </div>
+      <div class="footer">© ${new Date().getFullYear()} KMSF. All rights reserved.</div>
+    </div>
+    </body></html>
+  `,
+});
+
+module.exports = { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, eventNotificationTemplate, registrationReminderTemplate };
