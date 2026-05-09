@@ -96,13 +96,51 @@ const getSubscriptionStatus = async (req, res, next) => {
             membershipStatus = 'inactive';
         }
 
+        // Check if the subscription is set to cancel at period end
+        let cancelAtPeriodEnd = false;
+        if (user.stripeSubscriptionId) {
+            const stripe = require('../config/stripe');
+            try {
+                const sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+                cancelAtPeriodEnd = sub.cancel_at_period_end;
+            } catch (err) {
+                console.error('Failed to fetch subscription details from Stripe:', err.message);
+            }
+        }
+
         res.status(200).json({
             success: true,
             data: {
                 membershipStatus,
                 subscriptionEndDate: user.subscriptionEndDate,
                 remainingDays,
+                cancelAtPeriodEnd,
             },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ─── POST /cancel-subscription ───────────────────────────────────────────────
+const cancelSubscription = async (req, res, next) => {
+    try {
+        const user = req.user;
+
+        if (!user.stripeSubscriptionId) {
+            return res.status(400).json({ success: false, message: 'No active Stripe subscription found.' });
+        }
+
+        const stripe = require('../config/stripe');
+        
+        // Update the subscription to cancel at the end of the billing period
+        await stripe.subscriptions.update(user.stripeSubscriptionId, {
+            cancel_at_period_end: true
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Subscription has been set to cancel at the end of your billing cycle.',
         });
     } catch (error) {
         next(error);
@@ -172,4 +210,4 @@ const verifySession = async (req, res, next) => {
     }
 };
 
-module.exports = { startSubscription, renewSubscription, getSubscriptionStatus, verifySession };
+module.exports = { startSubscription, renewSubscription, getSubscriptionStatus, verifySession, cancelSubscription };
