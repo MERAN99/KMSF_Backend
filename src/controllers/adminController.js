@@ -156,7 +156,14 @@ const updateMember = async (req, res, next) => {
             role, membershipStatus
         };
 
-        if (subscriptionEndDate) updateData.subscriptionEndDate = new Date(subscriptionEndDate);
+        if (subscriptionEndDate) {
+            updateData.subscriptionEndDate = new Date(subscriptionEndDate);
+        } else if (membershipStatus === 'active') {
+            // Automatically grant 1 year of access if admin manually sets them to active
+            const oneYearFromNow = new Date();
+            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+            updateData.subscriptionEndDate = oneYearFromNow;
+        }
 
         // Handle password reset separately
         if (newPassword) {
@@ -191,7 +198,13 @@ const updateStatus = async (req, res, next) => {
         }
 
         const update = { membershipStatus };
-        if (subscriptionEndDate) update.subscriptionEndDate = new Date(subscriptionEndDate);
+        if (subscriptionEndDate) {
+            update.subscriptionEndDate = new Date(subscriptionEndDate);
+        } else if (membershipStatus === 'active') {
+            const oneYearFromNow = new Date();
+            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+            update.subscriptionEndDate = oneYearFromNow;
+        }
 
         const user = await User.findByIdAndUpdate(req.params.id, update, { new: true });
         if (!user) {
