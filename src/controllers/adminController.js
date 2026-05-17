@@ -146,7 +146,8 @@ const updateMember = async (req, res, next) => {
             title, firstName, lastName, gender, organization, profession,
             speciality, telephone,
             addressLine1, addressLine2, city, country, postCode,
-            role, membershipStatus, subscriptionEndDate, newPassword
+            role, membershipStatus, subscriptionEndDate, newPassword,
+            customDuration, emailTitle, emailMessage
         } = req.body;
 
         const updateData = {
@@ -156,7 +157,11 @@ const updateMember = async (req, res, next) => {
             role, membershipStatus
         };
 
-        if (subscriptionEndDate) {
+        if (customDuration && !isNaN(customDuration) && Number(customDuration) > 0) {
+            const newEndDate = new Date();
+            newEndDate.setDate(newEndDate.getDate() + Number(customDuration));
+            updateData.subscriptionEndDate = newEndDate;
+        } else if (subscriptionEndDate) {
             updateData.subscriptionEndDate = new Date(subscriptionEndDate);
         } else if (membershipStatus === 'active') {
             // Automatically grant 1 year of access if admin manually sets them to active
@@ -177,6 +182,11 @@ const updateMember = async (req, res, next) => {
 
         if (!user) {
             return res.status(404).json({ success: false, message: 'Member not found.' });
+        }
+
+        // Send custom email if requested
+        if (emailTitle && emailMessage) {
+            sendBulkEmail([user], emailTitle, emailMessage);
         }
 
         res.status(200).json({ success: true, message: 'Member updated.', data: user });
