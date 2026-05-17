@@ -25,7 +25,7 @@ const login = async (req, res, next) => {
             });
         }
 
-        if (user.membershipStatus === 'inactive') {
+        if (user.role !== 'admin' && user.membershipStatus === 'inactive') {
             return res.status(403).json({
                 success: false,
                 message: 'Membership expired. Please renew your plan.',
@@ -369,7 +369,7 @@ const updateProfile = async (req, res, next) => {
     try {
         const allowedFields = [
             'title', 'firstName', 'lastName', 'gender',
-            'organization', 'profession', 'speciality',
+            'organization', 'profession', 'speciality', 'telephone',
             'addressLine1', 'addressLine2', 'city', 'country', 'postCode',
         ];
 
@@ -399,6 +399,7 @@ const updateProfile = async (req, res, next) => {
                 organization: user.organization,
                 profession: user.profession,
                 speciality: user.speciality,
+                telephone: user.telephone,
                 email: user.email,
                 addressLine1: user.addressLine1,
                 addressLine2: user.addressLine2,

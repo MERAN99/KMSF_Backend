@@ -91,7 +91,7 @@ const getSubscriptionStatus = async (req, res, next) => {
 
         // Auto-deactivate if days ran out (belt-and-suspenders alongside requireMember)
         let membershipStatus = user.membershipStatus;
-        if (remainingDays <= 0 && membershipStatus === 'active') {
+        if (user.role !== 'admin' && remainingDays <= 0 && membershipStatus === 'active') {
             await User.findByIdAndUpdate(user._id, { membershipStatus: 'inactive' });
             membershipStatus = 'inactive';
         }

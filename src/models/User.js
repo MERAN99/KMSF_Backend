@@ -41,6 +41,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         select: false, // Never returned in queries unless explicitly requested
     },
+    telephone: {
+        type: String,
+        required: [true, 'Telephone number is required'],
+        trim: true,
+    },
     speciality: {
         type: String,
         trim: true,

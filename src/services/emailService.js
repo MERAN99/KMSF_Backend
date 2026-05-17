@@ -128,16 +128,27 @@ const sendContactEmail = async (name, email, subject, message) => {
 };
 
 /**
- * Sends registration reminder emails to multiple recipients in the background.
+ * Sends custom bulk emails to multiple recipients in the background.
  */
-const sendBulkRegistrationReminderEmail = (recipients) => {
-    const { subject, html } = registrationReminderTemplate();
+const sendBulkEmail = (recipients, title, message) => {
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #F59E0B; text-align: center;">${title}</h2>
+            <div style="color: #333; line-height: 1.6; white-space: pre-wrap; font-size: 16px;">
+                ${message}
+            </div>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+            <p style="color: #999; font-size: 12px; text-align: center;">
+                You are receiving this email because you are a registered user of KMSF.
+            </p>
+        </div>
+    `;
 
     // Fire and forget (Background processing)
-    processInBatches(recipients, subject, html)
-        .catch(err => console.error('Bulk registration reminder failed:', err));
+    processInBatches(recipients, title, html)
+        .catch(err => console.error('Bulk email failed:', err));
 
     return { status: 'processing', total: recipients.length };
 };
 
-module.exports = { sendContactEmail, sendWelcomeEmail, sendAnnouncementEmail, sendOTPEmail, sendEventNotificationEmail, sendBulkRegistrationReminderEmail };
+module.exports = { sendContactEmail, sendWelcomeEmail, sendAnnouncementEmail, sendOTPEmail, sendEventNotificationEmail, sendBulkEmail };

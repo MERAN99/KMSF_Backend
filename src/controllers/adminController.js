@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { generateMemberId } = require('../utils/memberId');
 const { getRemainingDays } = require('../utils/subscriptionDays');
-const { sendBulkRegistrationReminderEmail } = require('../services/emailService');
+const { sendBulkEmail } = require('../services/emailService');
 
 // ─── GET /admin/members ───────────────────────────────────────────────────────
 const getMembers = async (req, res, next) => {
@@ -143,14 +143,14 @@ const createMember = async (req, res, next) => {
 const updateMember = async (req, res, next) => {
     try {
         const {
-            title, firstName, lastName, gender, organization,
+            title, firstName, lastName, gender, organization, profession,
             speciality, telephone,
             addressLine1, addressLine2, city, country, postCode,
             role, membershipStatus, subscriptionEndDate, newPassword
         } = req.body;
 
         const updateData = {
-            title, firstName, lastName, gender, organization,
+            title, firstName, lastName, gender, organization, profession,
             speciality, telephone,
             addressLine1, addressLine2, city, country, postCode,
             role, membershipStatus
@@ -288,9 +288,12 @@ const toggleBlockMember = async (req, res, next) => {
 // ─── POST /admin/member/bulk-email ───────────────────────────────────────────
 const sendBulkRegistrationReminder = async (req, res, next) => {
     try {
-        const { userIds } = req.body;
+        const { userIds, title, message } = req.body;
         if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
             return res.status(400).json({ success: false, message: 'Please provide an array of userIds.' });
+        }
+        if (!title || !message) {
+            return res.status(400).json({ success: false, message: 'Title and message are required.' });
         }
         // Cap at 500 to prevent abuse
         if (userIds.length > 500) {
@@ -303,11 +306,11 @@ const sendBulkRegistrationReminder = async (req, res, next) => {
         }
 
         // Fire and forget email service
-        sendBulkRegistrationReminderEmail(users);
+        sendBulkEmail(users, title, message);
 
         res.status(200).json({
             success: true,
-            message: `Registration reminder emails are being sent to ${users.length} users in the background.`,
+            message: `Emails are being sent to ${users.length} users in the background.`,
         });
     } catch (error) {
         next(error);
