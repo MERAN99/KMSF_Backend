@@ -62,22 +62,24 @@ app.use(
 );
 
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
+// 1000 requests per 15 min per IP — prevents bots without blocking normal users
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 min
-    max: 100, // Limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, message: 'Too many requests from this IP. Please try again later.' },
 });
-app.use(limiter); // Apply globally to ALL routes
+app.use(limiter);
 
 // ─── Stricter rate limit for auth endpoints ────────────────────────────────────
+// 20 login/register attempts per 15 min per IP — protects against brute-force
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 50, // 50 auth attempts per 15 mins per IP
+    max: 20,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { success: false, message: 'Too many attempts. Please try again later.' },
+    message: { success: false, message: 'Too many login attempts. Please try again in 15 minutes.' },
 });
 
 // ─── Webhook route MUST come before express.json() ───────────────────────────
