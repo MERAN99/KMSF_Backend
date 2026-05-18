@@ -145,7 +145,7 @@ const updateMember = async (req, res, next) => {
         const {
             title, firstName, lastName, gender, organization, profession,
             speciality, telephone,
-            addressLine1, addressLine2, city, country, postCode,
+            addressLine1, addressLine2, city, countyRegion, country, postCode,
             role, membershipStatus, subscriptionEndDate, newPassword,
             customDuration, emailTitle, emailMessage
         } = req.body;
@@ -153,7 +153,7 @@ const updateMember = async (req, res, next) => {
         const updateData = {
             title, firstName, lastName, gender, organization, profession,
             speciality, telephone,
-            addressLine1, addressLine2, city, country, postCode,
+            addressLine1, addressLine2, city, countyRegion, country, postCode,
             role, membershipStatus
         };
 

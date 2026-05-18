@@ -64,6 +64,11 @@ const userSchema = new mongoose.Schema({
         required: [true, 'City is required'],
         trim: true,
     },
+    countyRegion: {
+        type: String,
+        required: [true, 'County Region is required'],
+        trim: true,
+    },
     country: {
         type: String,
         required: [true, 'Country is required'],

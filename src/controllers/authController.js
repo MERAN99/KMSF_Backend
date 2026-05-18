@@ -272,7 +272,7 @@ const register = async (req, res, next) => {
         const {
             title, firstName, lastName, gender, organization,
             email, password, profession, speciality, telephone,
-            addressLine1, addressLine2, city, country, postCode,
+            addressLine1, addressLine2, city, countyRegion, country, postCode,
         } = req.body;
 
         // Check for duplicate email
@@ -293,7 +293,7 @@ const register = async (req, res, next) => {
             email: email.toLowerCase(),
             password: hashedPassword,
             speciality: resolvedSpeciality, telephone,
-            addressLine1, addressLine2, city, country, postCode,
+            addressLine1, addressLine2, city, countyRegion, country, postCode,
             role: 'member',
             membershipStatus: 'registered',
             memberId,
@@ -352,6 +352,7 @@ const getProfile = async (req, res, next) => {
                 addressLine1: user.addressLine1,
                 addressLine2: user.addressLine2,
                 city: user.city,
+                countyRegion: user.countyRegion,
                 country: user.country,
                 postCode: user.postCode,
                 role: user.role,
@@ -370,7 +371,7 @@ const updateProfile = async (req, res, next) => {
         const allowedFields = [
             'title', 'firstName', 'lastName', 'gender',
             'organization', 'profession', 'speciality', 'telephone',
-            'addressLine1', 'addressLine2', 'city', 'country', 'postCode',
+            'addressLine1', 'addressLine2', 'city', 'countyRegion', 'country', 'postCode',
         ];
 
         const updates = {};
@@ -404,6 +405,7 @@ const updateProfile = async (req, res, next) => {
                 addressLine1: user.addressLine1,
                 addressLine2: user.addressLine2,
                 city: user.city,
+                countyRegion: user.countyRegion,
                 country: user.country,
                 postCode: user.postCode,
                 role: user.role,

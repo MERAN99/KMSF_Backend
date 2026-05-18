@@ -22,6 +22,7 @@ const startSubscription = async (req, res, next) => {
             addressLine1: user.addressLine1,
             addressLine2: user.addressLine2,
             city: user.city,
+            countyRegion: user.countyRegion,
             country: user.country,
             postCode: user.postCode,
         };

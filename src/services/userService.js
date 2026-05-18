@@ -33,6 +33,7 @@ const createUserFromWebhook = async ({ metadata, stripeCustomerId, stripeSubscri
         addressLine1: metadata.addressLine1,
         addressLine2: metadata.addressLine2,
         city: metadata.city,
+        countyRegion: metadata.countyRegion,
         country: metadata.country,
         postCode: metadata.postCode,
         telephone: metadata.telephone,

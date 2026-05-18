@@ -8,7 +8,7 @@ const getAdminStats = async (req, res, next) => {
             totalUsers,
             statusCounts,
             roleCounts,
-            countryCounts,
+            regionCounts,
             organizationCounts,
             professionCounts,
             blockStatusCounts
@@ -26,10 +26,10 @@ const getAdminStats = async (req, res, next) => {
                 { $group: { _id: '$role', count: { $sum: 1 } } }
             ]),
 
-            // Group by country (top 5)
+            // Group by region (top 5)
             User.aggregate([
-                { $match: { role: { $ne: 'admin' }, country: { $exists: true, $ne: '' } } },
-                { $group: { _id: '$country', count: { $sum: 1 } } },
+                { $match: { role: { $ne: 'admin' }, countyRegion: { $exists: true, $ne: '' } } },
+                { $group: { _id: '$countyRegion', count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
                 { $limit: 5 }
             ]),
@@ -69,7 +69,7 @@ const getAdminStats = async (req, res, next) => {
                     acc[curr._id] = curr.count;
                     return acc;
                 }, { admin: 0, member: 0 }),
-                countryCounts,
+                regionCounts,
                 organizationCounts,
                 professionCounts,
                 blockCounts: {
