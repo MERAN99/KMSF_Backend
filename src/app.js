@@ -17,6 +17,9 @@ const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
+// ─── Trust Proxy (Required for Fly.io/Render rate limiting) ─────────────
+app.set('trust proxy', 1);
+
 // ─── Security headers ─────────────────────────────────────────────────────────
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
