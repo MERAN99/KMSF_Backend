@@ -98,7 +98,7 @@ const getDonationMessages = async (req, res, next) => {
             showPublicly: true,   // Only admin-featured messages are shown publicly
         })
             .sort({ createdAt: -1 })
-            .select('donorName message createdAt')
+            .select('donorName message createdAt amount currency')
             .limit(50)
             .lean();
 

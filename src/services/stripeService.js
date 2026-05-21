@@ -110,7 +110,7 @@ const createDonationCheckoutSession = async (amount, currency, userId, donorName
             },
         ],
         metadata,
-        success_url: `${baseUrl}/donations?donation=success&session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${baseUrl}/donations?donation=success&session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
         cancel_url: `${baseUrl}/donations?donation=canceled`,
     });
 
