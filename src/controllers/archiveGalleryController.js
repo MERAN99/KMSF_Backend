@@ -133,8 +133,8 @@ const getArchiveFolderImages = async (req, res) => {
         // For page 1 we start fresh; for deeper pages we cache cursors in-memory
         // (good enough for a read-only archive that rarely changes).
 
-        // Build search expression — match all resources in the folder
-        const expression = `folder="${folder}"`;
+        // Build search expression — match only images in the folder
+        const expression = `folder="${folder}" AND resource_type="image"`;
 
         // Cloudinary Search API supports max_results up to 500
         const searchResult = await cloudinary.search
