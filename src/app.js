@@ -13,6 +13,7 @@ const adminRouter = require('./routes/admin');
 const eventRouter = require('./routes/event');
 const donationRouter = require('./routes/donation');
 const contactRouter = require('./routes/contact');
+const archiveGalleryRouter = require('./routes/archiveGallery');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -44,6 +45,8 @@ const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
     'https://kmsf-uk.netlify.app',
+    'https://kmsf.org.uk',
+    'https://www.kmsf.org.uk',
     ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : []),
 ];
 
@@ -118,6 +121,7 @@ const contactLimiter = rateLimit({
     message: { success: false, message: 'Too many messages sent. Please try again later.' },
 });
 app.use('/contact', contactLimiter, contactRouter);  // /contact/*
+app.use('/archive-gallery', archiveGalleryRouter);   // /archive-gallery/*
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
