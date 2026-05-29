@@ -27,7 +27,10 @@ const eventSchema = new mongoose.Schema({
     },
     date: {
         type: Date,
-        required: [true, 'Event date is required'],
+    },
+    isTBD: {
+        type: Boolean,
+        default: false,
     },
     time: {
         type: String, // e.g., '9:00 AM - 8:30 PM'

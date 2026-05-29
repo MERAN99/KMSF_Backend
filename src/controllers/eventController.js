@@ -7,7 +7,16 @@ const { sendEventNotificationEmail } = require('../services/emailService');
 // @access  Public
 exports.getEvents = async (req, res, next) => {
     try {
-        const events = await Event.find().sort({ date: 1 });
+        const events = await Event.find();
+        
+        // Sort in JavaScript: normal events sorted by date ascending, TBD events placed at the very end
+        events.sort((a, b) => {
+            if (a.isTBD && !b.isTBD) return 1;
+            if (!a.isTBD && b.isTBD) return -1;
+            if (a.isTBD && b.isTBD) return 0;
+            return new Date(a.date) - new Date(b.date);
+        });
+
         res.status(200).json({
             success: true,
             count: events.length,
@@ -46,9 +55,18 @@ exports.getEvent = async (req, res, next) => {
 // @access  Private/Admin
 exports.createEvent = async (req, res, next) => {
     try {
-        const { title, date, time, location, description, category, prices } = req.body;
+        const { title, date, time, location, description, category, prices, isTBD } = req.body;
 
-        const eventData = { title, date, time, location, description, category };
+        const isTbdBool = isTBD === 'true' || isTBD === true;
+        const eventData = {
+            title,
+            date: isTbdBool ? null : date,
+            time,
+            location,
+            description,
+            category,
+            isTBD: isTbdBool
+        };
 
         // Handle uploaded images and galleryImages from upload.fields()
         if (req.files) {
@@ -81,9 +99,18 @@ exports.createEvent = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateEvent = async (req, res, next) => {
     try {
-        const { title, date, time, location, description, category, prices, existingImages, existingGalleryImages } = req.body;
+        const { title, date, time, location, description, category, prices, existingImages, existingGalleryImages, isTBD } = req.body;
 
-        const eventData = { title, date, time, location, description, category };
+        const isTbdBool = isTBD === 'true' || isTBD === true;
+        const eventData = {
+            title,
+            date: isTbdBool ? null : date,
+            time,
+            location,
+            description,
+            category,
+            isTBD: isTbdBool
+        };
 
         // Existing images kept by the client (they send back what they want to keep)
         let keptImages = [];
