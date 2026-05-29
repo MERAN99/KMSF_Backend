@@ -25,7 +25,7 @@ const {
 } = require('../controllers/announcementController');
 const { requireAuth } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/requireAdmin');
-const upload = require('../middleware/upload');
+const { upload, teamUpload } = require('../middleware/upload');
 const { validateAnnouncement, validateCreateMember } = require('../middleware/validate');
 
 // All admin routes require authentication + admin role
@@ -48,13 +48,19 @@ router.patch('/member/:id/toggle-block', toggleBlockMember);
 
 // ─── Event Management ─────────────────────────────────────────────────────────
 router.get('/events', getEvents);
-router.post('/event', upload.array('images', 10), createEvent);
-router.put('/event/:id', upload.array('images', 10), updateEvent);
+router.post('/event', upload.fields([{ name: 'images', maxCount: 3 }, { name: 'galleryImages', maxCount: 1000 }]), createEvent);
+router.put('/event/:id', upload.fields([{ name: 'images', maxCount: 3 }, { name: 'galleryImages', maxCount: 1000 }]), updateEvent);
 router.delete('/event/:id', deleteEvent);
 router.post('/event/:id/notify', notifyMembers);
 
 // ─── Announcements ────────────────────────────────────────────────────────────
 router.post('/announcement', validateAnnouncement, sendAnnouncement);
 router.get('/announcements', getAnnouncements);
+
+// ─── Team Member Management ──────────────────────────────────────────────────
+const { createTeamMember, deleteTeamMember, updateTeamMember } = require('../controllers/teamMemberController');
+router.post('/team-member', teamUpload.fields([{ name: 'image', maxCount: 1 }]), createTeamMember);
+router.put('/team-member/:id', teamUpload.fields([{ name: 'image', maxCount: 1 }]), updateTeamMember);
+router.delete('/team-member/:id', deleteTeamMember);
 
 module.exports = router;

@@ -13,7 +13,7 @@ const adminRouter = require('./routes/admin');
 const eventRouter = require('./routes/event');
 const donationRouter = require('./routes/donation');
 const contactRouter = require('./routes/contact');
-const archiveGalleryRouter = require('./routes/archiveGallery');
+const teamMemberRouter = require('./routes/teamMember');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -121,7 +121,7 @@ const contactLimiter = rateLimit({
     message: { success: false, message: 'Too many messages sent. Please try again later.' },
 });
 app.use('/contact', contactLimiter, contactRouter);  // /contact/*
-app.use('/archive-gallery', archiveGalleryRouter);   // /archive-gallery/*
+app.use('/team-members', teamMemberRouter);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

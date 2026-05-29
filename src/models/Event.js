@@ -20,6 +20,11 @@ const eventSchema = new mongoose.Schema({
         type: [String],
         default: [],
     },
+    // Unlimited gallery images stored as an array of URLs (Cloudinary)
+    galleryImages: {
+        type: [String],
+        default: [],
+    },
     date: {
         type: Date,
         required: [true, 'Event date is required'],

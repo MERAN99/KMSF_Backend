@@ -50,9 +50,14 @@ exports.createEvent = async (req, res, next) => {
 
         const eventData = { title, date, time, location, description, category };
 
-        // Handle multiple uploaded images — req.files is an array from upload.array()
-        if (req.files && req.files.length > 0) {
-            eventData.images = req.files.map(f => f.path); // Cloudinary returns full URL in path
+        // Handle uploaded images and galleryImages from upload.fields()
+        if (req.files) {
+            if (req.files.images && req.files.images.length > 0) {
+                eventData.images = req.files.images.map(f => f.path);
+            }
+            if (req.files.galleryImages && req.files.galleryImages.length > 0) {
+                eventData.galleryImages = req.files.galleryImages.map(f => f.path);
+            }
         }
 
         // Handle prices if sent as a JSON string from FormData
@@ -76,24 +81,36 @@ exports.createEvent = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateEvent = async (req, res, next) => {
     try {
-        const { title, date, time, location, description, category, prices, existingImages } = req.body;
+        const { title, date, time, location, description, category, prices, existingImages, existingGalleryImages } = req.body;
 
         const eventData = { title, date, time, location, description, category };
 
         // Existing images kept by the client (they send back what they want to keep)
-        let kept = [];
+        let keptImages = [];
         if (existingImages) {
-            kept = typeof existingImages === 'string' ? JSON.parse(existingImages) : existingImages;
+            keptImages = typeof existingImages === 'string' ? JSON.parse(existingImages) : existingImages;
+        }
+        
+        let keptGalleryImages = [];
+        if (existingGalleryImages) {
+            keptGalleryImages = typeof existingGalleryImages === 'string' ? JSON.parse(existingGalleryImages) : existingGalleryImages;
         }
 
         // New uploads
-        let newUploads = [];
-        if (req.files && req.files.length > 0) {
-            newUploads = req.files.map(f => f.path);
+        let newImages = [];
+        let newGalleryImages = [];
+        if (req.files) {
+            if (req.files.images && req.files.images.length > 0) {
+                newImages = req.files.images.map(f => f.path);
+            }
+            if (req.files.galleryImages && req.files.galleryImages.length > 0) {
+                newGalleryImages = req.files.galleryImages.map(f => f.path);
+            }
         }
 
         // Merge: keep selected existing + add new uploads
-        eventData.images = [...kept, ...newUploads];
+        eventData.images = [...keptImages, ...newImages];
+        eventData.galleryImages = [...keptGalleryImages, ...newGalleryImages];
 
         // Handle prices
         if (prices) {
