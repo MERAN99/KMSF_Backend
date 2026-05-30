@@ -44,14 +44,14 @@ exports.getTeamMembers = async (req, res, next) => {
 // @access  Private/Admin
 exports.createTeamMember = async (req, res, next) => {
     try {
-        const { name, position, bio, detail, teamType, order } = req.body;
+        const normalizedTeamType = teamType === 'audiovisual' ? 'audioVisual' : teamType;
 
         const teamMemberData = {
             name,
             position,
             bio,
             detail,
-            teamType,
+            teamType: normalizedTeamType,
             order: order ? parseInt(order, 10) : 0,
         };
 
@@ -125,12 +125,14 @@ exports.updateTeamMember = async (req, res, next) => {
             });
         }
 
+        const normalizedTeamType = teamType === 'audiovisual' ? 'audioVisual' : teamType;
+
         const updateData = {
             name,
             position,
             bio,
             detail,
-            teamType,
+            teamType: normalizedTeamType,
             order: order ? parseInt(order, 10) : 0,
         };
 
