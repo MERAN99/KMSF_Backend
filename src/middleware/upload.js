@@ -2,6 +2,13 @@ const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
 
+// SECURITY NOTE (CVE GHSA-g4mf-96x5-5m2c):
+// cloudinary v1 has an argument injection vulnerability via parameters containing '&'.
+// This is NOT exploitable here because ALL transformation parameters below are
+// hardcoded server-side constants — no user-supplied values reach Cloudinary's API.
+// Upgrading to v2 is blocked by multer-storage-cloudinary@4.0.0 requiring cloudinary v1.
+// Monitor https://github.com/badunk/multer-storage-cloudinary for a v2-compatible release.
+
 // Storage configuration for events (converts and compresses to WebP)
 const storage = new CloudinaryStorage({
     cloudinary,

@@ -1,6 +1,15 @@
 const transporter = require('../config/email');
 const { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, eventNotificationTemplate, registrationReminderTemplate } = require('../utils/emailTemplates');
 
+// ─── Security Helper ─────────────────────────────────────────────────────────────────────────
+// Escapes HTML special characters to prevent XSS in email bodies (H6, M4)
+const escapeHtml = (str) => String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
 /**
  * Sends a welcome email to a newly created member.
  */
@@ -105,24 +114,25 @@ const sendEventNotificationEmail = (recipients, event) => {
  */
 const sendContactEmail = async (name, email, subject, message) => {
     try {
+        // H6: Escape all user-supplied values before inserting into HTML
         const html = `
             <h3>New Contact Message from KMSF Website</h3>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+            <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+            <p><strong>Subject:</strong> ${escapeHtml(subject)}</p>
             <p><strong>Message:</strong></p>
-            <p>${message.replace(/\n/g, '<br>')}</p>
+            <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
         `;
         await transporter.sendMail({
             from: process.env.EMAIL_FROM,
             to: 'Info@kmsf.org.uk', // Send to KMSF directly
             replyTo: email,      // So they can reply directly to the user
-            subject: `Contact Form: ${subject} - ${name}`,
+            subject: `Contact Form: ${escapeHtml(subject)} - ${escapeHtml(name)}`,
             html,
         });
-        console.log(`Contact message sent from ${email}`);
+        console.log(`Contact message sent from ${email.split('@')[0].slice(0, 3)}***@${email.split('@')[1]}`);
     } catch (error) {
-        console.error(`Failed to send contact message from ${email}: ${error.message}`);
+        console.error(`Failed to send contact message: ${error.message}`);
         throw new Error('Failed to send message.');
     }
 };
@@ -131,11 +141,12 @@ const sendContactEmail = async (name, email, subject, message) => {
  * Sends custom bulk emails to multiple recipients in the background.
  */
 const sendBulkEmail = (recipients, title, message) => {
+    // M4: Escape admin-supplied title and message to prevent HTML injection
     const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #F59E0B; text-align: center;">${title}</h2>
+            <h2 style="color: #F59E0B; text-align: center;">${escapeHtml(title)}</h2>
             <div style="color: #333; line-height: 1.6; white-space: pre-wrap; font-size: 16px;">
-                ${message}
+                ${escapeHtml(message)}
             </div>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
             <p style="color: #999; font-size: 12px; text-align: center;">

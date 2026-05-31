@@ -43,9 +43,8 @@ const requireAuth = async (req, res, next) => {
 const signToken = (user) => {
     return jwt.sign(
         {
+            // M3: Minimal claims — role/membershipStatus are read from DB on every request
             userId: user._id,
-            role: user.role,
-            membershipStatus: user.membershipStatus,
         },
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }

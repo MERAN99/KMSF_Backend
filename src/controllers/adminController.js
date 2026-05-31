@@ -4,6 +4,13 @@ const { generateMemberId } = require('../utils/memberId');
 const { getRemainingDays } = require('../utils/subscriptionDays');
 const { sendBulkEmail } = require('../services/emailService');
 
+// ─── Security Helpers ─────────────────────────────────────────────────────────
+// Escape regex metacharacters to prevent ReDoS via user-supplied search terms
+const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Whitelist of fields that can be used as sort keys (prevents injection via sortBy)
+const ALLOWED_SORT_FIELDS = ['createdAt', 'firstName', 'lastName', 'email', 'membershipStatus', 'memberId', 'organization'];
+
 // ─── GET /admin/members ───────────────────────────────────────────────────────
 const getMembers = async (req, res, next) => {
     try {
@@ -26,13 +33,15 @@ const getMembers = async (req, res, next) => {
         if (organization) conditions.push({ organization: organization });
         
         if (search) {
+            // H4: Escape regex metacharacters to prevent ReDoS
+            const safeSearch = escapeRegex(search);
             conditions.push({
                 $or: [
-                    { firstName: { $regex: search, $options: 'i' } },
-                    { lastName: { $regex: search, $options: 'i' } },
-                    { email: { $regex: search, $options: 'i' } },
-                    { memberId: { $regex: search, $options: 'i' } },
-                    { organization: { $regex: search, $options: 'i' } },
+                    { firstName: { $regex: safeSearch, $options: 'i' } },
+                    { lastName: { $regex: safeSearch, $options: 'i' } },
+                    { email: { $regex: safeSearch, $options: 'i' } },
+                    { memberId: { $regex: safeSearch, $options: 'i' } },
+                    { organization: { $regex: safeSearch, $options: 'i' } },
                 ]
             });
         }
@@ -49,7 +58,10 @@ const getMembers = async (req, res, next) => {
         const safePage = Math.max(1, parseInt(page));
         const safeLimit = Math.min(100, Math.max(1, parseInt(limit)));
         const skip = (safePage - 1) * safeLimit;
-        const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+
+        // H3: Whitelist sortBy to prevent MongoDB operator injection
+        const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : 'createdAt';
+        const sort = { [safeSortBy]: sortOrder === 'asc' ? 1 : -1 };
 
         const [members, total] = await Promise.all([
             User.find(filter).sort(sort).skip(skip).limit(safeLimit).lean(),

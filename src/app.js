@@ -28,7 +28,8 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
+            // M1: Removed 'unsafe-inline' from scriptSrc — it defeats XSS protection
+            scriptSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "blob:", "http://localhost:5000", BACKEND_URL],
@@ -37,8 +38,15 @@ app.use(helmet({
             upgradeInsecureRequests: [],
         },
     },
-    crossOriginResourcePolicy: { policy: "cross-origin" }
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
+
+// L5: Permissions-Policy header (not yet in Helmet — added manually)
+app.use((req, res, next) => {
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+    next();
+});
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
 const allowedOrigins = [
@@ -104,8 +112,14 @@ app.get('/health', (req, res) => {
 });
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
-app.use('/login', authLimiter);           // Auth limiter only on login
-app.use('/register', authLimiter);        // Auth limiter only on register
+app.use('/login', authLimiter);           // Auth limiter on login
+app.use('/register', authLimiter);        // Auth limiter on register
+// M2: Apply strict rate limit to all OTP/password-reset routes (prevents brute-force)
+app.use('/request-verification', authLimiter);
+app.use('/confirm-verification', authLimiter);
+app.use('/forgot-password', authLimiter);
+app.use('/verify-reset-code', authLimiter);
+app.use('/reset-password', authLimiter);
 app.use('/', authRouter);                 // /login, /request-verification, etc.
 app.use('/', subscriptionRouter);         // /start-subscription, /renew-subscription
 app.use('/', memberRouter);               // /member/subscription-status

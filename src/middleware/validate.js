@@ -35,6 +35,10 @@ const validateStartSubscription = [
         if (!value) {
             throw new Error('Password is required.');
         }
+        // L4: Enforce max length before bcrypt to prevent DoS
+        if (value.length > 128) {
+            throw new Error('Password must not exceed 128 characters.');
+        }
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         if (!passwordRegex.test(value)) {
             throw new Error('Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.');
@@ -66,6 +70,8 @@ const validateRegister = [
     body('postCode').notEmpty().withMessage('Post code is required.').trim(),
     body('password').custom((value) => {
         if (!value) throw new Error('Password is required.');
+        // L4: Enforce max length before bcrypt to prevent DoS
+        if (value.length > 128) throw new Error('Password must not exceed 128 characters.');
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         if (!passwordRegex.test(value)) {
             throw new Error('Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.');
@@ -112,6 +118,8 @@ const validateCreateMember = [
     body('postCode').notEmpty().withMessage('Post code is required.').trim(),
     body('password').optional().custom((value) => {
         if (!value) return true;
+        // L4: Enforce max length before bcrypt to prevent DoS
+        if (value.length > 128) throw new Error('Password must not exceed 128 characters.');
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         if (!passwordRegex.test(value)) {
             throw new Error('Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.');
@@ -133,6 +141,9 @@ const validateUpdateMember = [
     body('city').optional().notEmpty().withMessage('City cannot be empty.').trim(),
     body('country').optional().notEmpty().withMessage('Country cannot be empty.').trim(),
     body('postCode').optional().notEmpty().withMessage('Post code cannot be empty.').trim(),
+    // H5: Prevent role escalation — only 'member' can be set via API
+    body('role').optional().isIn(['member']).withMessage('Role cannot be elevated to admin via API.'),
+    body('membershipStatus').optional().isIn(['active', 'inactive', 'registered']).withMessage('Invalid membership status.'),
     handleValidationErrors,
 ];
 

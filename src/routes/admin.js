@@ -26,7 +26,7 @@ const {
 const { requireAuth } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/requireAdmin');
 const { upload, teamUpload } = require('../middleware/upload');
-const { validateAnnouncement, validateCreateMember } = require('../middleware/validate');
+const { validateAnnouncement, validateCreateMember, validateUpdateMember } = require('../middleware/validate');
 
 // All admin routes require authentication + admin role
 router.use(requireAuth, requireAdmin);
@@ -36,7 +36,7 @@ router.get('/stats', require('../controllers/adminStatsController').getAdminStat
 router.get('/members', getMembers);
 router.get('/member/:id', getMember);
 router.post('/member', validateCreateMember, createMember);
-router.put('/member/:id', updateMember);
+router.put('/member/:id', validateUpdateMember, updateMember);  // H5: validates + blocks role escalation
 router.patch('/member/:id/status', updateStatus);
 router.delete('/member/:id', deleteMember);
 
