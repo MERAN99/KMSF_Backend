@@ -143,7 +143,7 @@ const eventNotificationTemplate = (event) => ({
           <p class="event-detail"><strong>Description:</strong> ${event.description}</p>
         </div>
         <p>We look forward to seeing you there!</p>
-        <a href="http://localhost:5173/events" class="cta-button">View More Events</a>
+        <a href="https://kmsf.org.uk/events" class="cta-button">View More Events</a>
         <p style="margin-top:32px;">Best regards,<br><strong>The KMSF Team</strong></p>
       </div>
       <div class="footer">© ${new Date().getFullYear()} KMSF. All rights reserved. You are receiving this because you are a KMSF member.</div>

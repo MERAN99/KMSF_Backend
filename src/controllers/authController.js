@@ -4,7 +4,7 @@ const { findByEmail } = require('../services/userService');
 const { signToken } = require('../middleware/auth');
 const { generateMemberId } = require('../utils/memberId');
 const { welcomeEmailTemplate } = require('../utils/emailTemplates');
-const { sendEmail } = require('../services/emailService');
+const { sendWelcomeEmail } = require('../services/emailService');
 
 
 // ─── POST /login ─────────────────────────────────────────────────────────────
@@ -303,8 +303,7 @@ const register = async (req, res, next) => {
 
         // Send a welcome email (non-blocking)
         try {
-            const { subject, html } = welcomeEmailTemplate(user);
-            await sendEmail(user.email, subject, html);
+            await sendWelcomeEmail(user);
         } catch (emailErr) {
             console.warn('Welcome email failed (non-fatal):', emailErr.message);
         }
