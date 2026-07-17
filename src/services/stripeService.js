@@ -118,6 +118,43 @@ const createDonationCheckoutSession = async (amount, currency, userId, donorName
 };
 
 /**
+ * Creates a new Stripe Checkout Session for buying an event ticket.
+ */
+const createEventTicketCheckoutSession = async (event, ticketType, amount, currency, userId) => {
+    const metadata = {
+        isEventTicket: 'true',
+        userId: userId.toString(),
+        eventId: event._id.toString(),
+        ticketType: ticketType
+    };
+
+    const baseUrl = process.env.STRIPE_CANCEL_URL.replace(/\/membership$/, '');
+
+    const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        payment_method_types: ['card'],
+        line_items: [
+            {
+                price_data: {
+                    currency: currency || 'GBP',
+                    product_data: {
+                        name: `Ticket for: ${event.title}`,
+                        description: `Ticket Type: ${ticketType}`,
+                    },
+                    unit_amount: Math.round(amount * 100),
+                },
+                quantity: 1,
+            },
+        ],
+        metadata,
+        success_url: `${baseUrl}/ticket-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/events/${event._id}?checkout=canceled`,
+    });
+
+    return session;
+};
+
+/**
  * Verifies Stripe webhook signature and constructs the event.
  */
 const constructWebhookEvent = (rawBody, signature) => {
@@ -133,5 +170,6 @@ module.exports = {
     createBillingPortalSession,
     createRenewalCheckoutSession,
     createDonationCheckoutSession,
+    createEventTicketCheckoutSession,
     constructWebhookEvent,
 };

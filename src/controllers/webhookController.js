@@ -72,6 +72,25 @@ const handleCheckoutCompleted = async (session) => {
         return;
     }
 
+    // Handle Event Tickets
+    if (session.mode === 'payment' && session.metadata?.isEventTicket === 'true') {
+        const Ticket = require('../models/Ticket');
+        try {
+            await Ticket.create({
+                user: session.metadata.userId,
+                event: session.metadata.eventId,
+                ticketType: session.metadata.ticketType,
+                pricePaid: session.amount_total / 100,
+                paymentStatus: session.payment_status === 'paid' ? 'paid' : 'pending',
+                stripeSessionId: session.id,
+            });
+            console.log(`Event ticket created for user ${session.metadata.userId} (Event: ${session.metadata.eventId}).`);
+        } catch (error) {
+            console.error('Error saving event ticket:', error);
+        }
+        return;
+    }
+
     if (session.mode !== 'subscription') return;
 
     const { metadata, customer, subscription } = session;

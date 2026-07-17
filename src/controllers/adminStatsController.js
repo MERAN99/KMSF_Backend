@@ -42,12 +42,11 @@ const getAdminStats = async (req, res, next) => {
                 { $limit: 5 }
             ]),
 
-            // Group by profession (top 5)
+            // Group by profession (All)
             User.aggregate([
                 { $match: { role: { $ne: 'admin' }, profession: { $exists: true, $ne: '' } } },
                 { $group: { _id: '$profession', count: { $sum: 1 } } },
-                { $sort: { count: -1 } },
-                { $limit: 10 }
+                { $sort: { count: -1 } }
             ]),
 
             // Group by block status

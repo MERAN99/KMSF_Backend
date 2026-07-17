@@ -1,4 +1,4 @@
-const transporter = require('../config/email');
+const { transporter, brevoTransporter } = require('../config/email');
 const { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, eventNotificationTemplate, registrationReminderTemplate } = require('../utils/emailTemplates');
 
 // ─── Security Helper ─────────────────────────────────────────────────────────────────────────
@@ -83,13 +83,13 @@ const sendAnnouncementEmail = (recipients, title, message) => {
 const sendOTPEmail = async (email, code) => {
     try {
         const { subject, html } = verificationEmailTemplate(code);
-        await transporter.sendMail({
-            from: process.env.EMAIL_FROM,
+        await brevoTransporter.sendMail({
+            from: process.env.BREVO_FROM || process.env.EMAIL_FROM,
             to: email,
             subject,
             html,
         });
-        console.log(`Verification OTP sent to ${email}`);
+        console.log(`Verification OTP sent to ${email} (via Brevo)`);
     } catch (error) {
         console.error(`Failed to send verification email to ${email}: ${error.message}`);
         throw new Error('Failed to send verification email.');

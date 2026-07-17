@@ -125,7 +125,6 @@ app.use('/', memberRouter);               // /member/subscription-status
 app.use('/admin', adminRouter);           // /admin/*
 app.use('/events', eventRouter);          // /events/*
 app.use('/donations', donationRouter);    // /donations/*
-// Strict rate limit for contact form — prevents email flooding
 const contactLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5, // Only 5 contact form submissions per hour per IP
@@ -135,6 +134,9 @@ const contactLimiter = rateLimit({
 });
 app.use('/contact', contactLimiter, contactRouter);  // /contact/*
 app.use('/team-members', teamMemberRouter);
+
+const ticketRouter = require('./routes/ticket');
+app.use('/', ticketRouter);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
