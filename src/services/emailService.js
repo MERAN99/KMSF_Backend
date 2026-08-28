@@ -16,8 +16,8 @@ const escapeHtml = (str) => String(str)
 const sendWelcomeEmail = async (user) => {
     try {
         const { subject, html } = welcomeEmailTemplate(user);
-        await transporter.sendMail({
-            from: process.env.EMAIL_FROM,
+        await brevoTransporter.sendMail({
+            from: process.env.BREVO_FROM || process.env.EMAIL_FROM,
             to: user.email,
             subject,
             html,
@@ -42,8 +42,8 @@ const processInBatches = async (recipients, subject, html, batchSize = 10, delay
 
         await Promise.all(batch.map(async (recipient) => {
             try {
-                await transporter.sendMail({
-                    from: process.env.EMAIL_FROM,
+                await brevoTransporter.sendMail({
+                    from: process.env.BREVO_FROM || process.env.EMAIL_FROM,
                     to: recipient.email,
                     subject,
                     html,
@@ -123,8 +123,8 @@ const sendContactEmail = async (name, email, subject, message) => {
             <p><strong>Message:</strong></p>
             <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
         `;
-        await transporter.sendMail({
-            from: process.env.EMAIL_FROM,
+        await brevoTransporter.sendMail({
+            from: process.env.BREVO_FROM || process.env.EMAIL_FROM,
             to: 'Info@kmsf.org.uk', // Send to KMSF directly
             replyTo: email,      // So they can reply directly to the user
             subject: `Contact Form: ${escapeHtml(subject)} - ${escapeHtml(name)}`,
