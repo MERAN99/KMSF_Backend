@@ -54,6 +54,7 @@ const allowedOrigins = [
     'http://localhost:3000',
     'https://kmsf.org.uk',
     'https://www.kmsf.org.uk',
+    'https://kmsf-uk.netlify.app',
     ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : []),
 ];
 
