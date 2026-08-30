@@ -90,11 +90,11 @@ const getSubscriptionStatus = async (req, res, next) => {
         const user = req.user;
         const remainingDays = getRemainingDays(user.subscriptionEndDate);
 
-        // Auto-deactivate if days ran out (belt-and-suspenders alongside requireMember)
+        // Auto-deactivate if days ran out (belt-and-suspenders alongside the cron job)
         let membershipStatus = user.membershipStatus;
         if (user.role !== 'admin' && remainingDays <= 0 && membershipStatus === 'active') {
-            await User.findByIdAndUpdate(user._id, { membershipStatus: 'inactive' });
-            membershipStatus = 'inactive';
+            await User.findByIdAndUpdate(user._id, { membershipStatus: 'registered' });
+            membershipStatus = 'registered';
         }
 
         // Check if the subscription is set to cancel at period end

@@ -7,6 +7,10 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
     await connectDB();
 
+    // Start background jobs
+    const { startMembershipExpiryJob } = require('./jobs/membershipExpiry');
+    startMembershipExpiryJob();
+
     const server = app.listen(PORT, '0.0.0.0', () => {
         console.log(`
 ╔══════════════════════════════════════════════╗

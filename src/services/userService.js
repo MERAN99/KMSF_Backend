@@ -82,9 +82,17 @@ const activateMembership = (userId, stripeSubscriptionId, subscriptionEndDate) =
 
 /**
  * Deactivate membership on payment failure or subscription deletion.
+ * Sets user back to 'registered' and clears Stripe subscription reference.
  */
 const deactivateMembership = (userId) =>
-    User.findByIdAndUpdate(userId, { membershipStatus: 'inactive' }, { new: true });
+    User.findByIdAndUpdate(
+        userId,
+        {
+            membershipStatus: 'registered',
+            $unset: { stripeSubscriptionId: '' },
+        },
+        { new: true }
+    );
 
 module.exports = {
     createUserFromWebhook,

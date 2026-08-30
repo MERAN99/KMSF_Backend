@@ -128,6 +128,9 @@ const handlePaymentSucceeded = async (invoice) => {
     // Only handle subscription invoices (not one-off)
     if (invoice.billing_reason === 'manual') return;
 
+    // Skip the initial subscription invoice — already handled by checkout.session.completed
+    if (invoice.billing_reason === 'subscription_create') return;
+
     const customerId = invoice.customer;
     const subscriptionId = invoice.subscription;
 
@@ -140,6 +143,13 @@ const handlePaymentSucceeded = async (invoice) => {
     // Get updated period end from the subscription
     const stripe = require('../config/stripe');
     const subscriptionObj = await stripe.subscriptions.retrieve(subscriptionId);
+
+    // Don't re-activate if the subscription is cancelled or not active
+    if (subscriptionObj.status !== 'active') {
+        console.log(`invoice.payment_succeeded: Skipping — subscription ${subscriptionId} status is '${subscriptionObj.status}', not 'active'.`);
+        return;
+    }
+
     const subscriptionEndDate = new Date(subscriptionObj.current_period_end * 1000);
 
     await activateMembership(user._id, subscriptionId, subscriptionEndDate);
