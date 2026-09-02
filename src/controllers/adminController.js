@@ -352,6 +352,28 @@ const sendBulkRegistrationReminder = async (req, res, next) => {
     }
 };
 
+// ─── POST /admin/sync-stripe ─────────────────────────────────────────────────
+const syncStripe = async (req, res, next) => {
+    try {
+        const { syncAllActiveStripeSubscriptions } = require('../services/stripeSyncService');
+        const result = await syncAllActiveStripeSubscriptions();
+        if (result.success) {
+            res.status(200).json({
+                success: true,
+                message: `Successfully synchronized ${result.syncedCount} active subscriptions from Stripe (${result.totalActiveInStripe} total found in Stripe).`,
+                data: result,
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: `Stripe sync failed: ${result.error}`,
+            });
+        }
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getMembers,
     getMember,
@@ -363,4 +385,5 @@ module.exports = {
     regenerateMemberId,
     toggleBlockMember,
     sendBulkRegistrationReminder,
+    syncStripe,
 };

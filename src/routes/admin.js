@@ -11,6 +11,7 @@ const {
     regenerateMemberId,
     toggleBlockMember,
     sendBulkRegistrationReminder,
+    syncStripe,
 } = require('../controllers/adminController');
 const {
     getEvents,
@@ -42,6 +43,7 @@ router.delete('/member/:id', deleteMember);
 
 // ─── Admin Extras ─────────────────────────────────────────────────────────────
 router.post('/member/bulk-email', sendBulkRegistrationReminder);
+router.post('/sync-stripe', syncStripe);
 router.patch('/member/:id/reset-password', resetPassword);
 router.patch('/member/:id/regenerate-member-id', regenerateMemberId);
 router.patch('/member/:id/toggle-block', toggleBlockMember);
