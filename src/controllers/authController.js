@@ -179,8 +179,8 @@ const forgotPassword = async (req, res, next) => {
             { upsert: true, new: true }
         );
 
-        const { sendOTPEmail } = require('../services/emailService');
-        await sendOTPEmail(email, code);
+        const { sendPasswordResetEmail } = require('../services/emailService');
+        await sendPasswordResetEmail(email, code);
 
         res.status(200).json({
             success: true,

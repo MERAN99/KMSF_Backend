@@ -1,5 +1,5 @@
 const { transporter, brevoTransporter } = require('../config/email');
-const { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, eventNotificationTemplate, registrationReminderTemplate } = require('../utils/emailTemplates');
+const { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, passwordResetEmailTemplate, eventNotificationTemplate, registrationReminderTemplate } = require('../utils/emailTemplates');
 
 // ─── Security Helper ─────────────────────────────────────────────────────────────────────────
 // Escapes HTML special characters to prevent XSS in email bodies (H6, M4)
@@ -97,6 +97,25 @@ const sendOTPEmail = async (email, code) => {
 };
 
 /**
+ * Sends a password reset OTP code via Brevo.
+ */
+const sendPasswordResetEmail = async (email, code) => {
+    try {
+        const { subject, html } = passwordResetEmailTemplate(code);
+        await brevoTransporter.sendMail({
+            from: process.env.BREVO_FROM || process.env.EMAIL_FROM,
+            to: email,
+            subject,
+            html,
+        });
+        console.log(`Password reset OTP sent to ${email} (via Brevo)`);
+    } catch (error) {
+        console.error(`Failed to send password reset email to ${email}: ${error.message}`);
+        throw new Error('Failed to send password reset email.');
+    }
+};
+
+/**
  * Sends an event notification email to multiple recipients in the background.
  */
 const sendEventNotificationEmail = (recipients, event) => {
@@ -162,4 +181,4 @@ const sendBulkEmail = (recipients, title, message) => {
     return { status: 'processing', total: recipients.length };
 };
 
-module.exports = { sendContactEmail, sendWelcomeEmail, sendAnnouncementEmail, sendOTPEmail, sendEventNotificationEmail, sendBulkEmail };
+module.exports = { sendContactEmail, sendWelcomeEmail, sendAnnouncementEmail, sendOTPEmail, sendPasswordResetEmail, sendEventNotificationEmail, sendBulkEmail };
