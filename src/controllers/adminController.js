@@ -30,7 +30,13 @@ const getMembers = async (req, res, next) => {
         // Build base conditions
         const conditions = [{ role: { $ne: 'admin' } }];
         if (status) conditions.push({ membershipStatus: status });
-        if (organization) conditions.push({ organization: organization });
+        if (organization) {
+            if (organization === 'Student') {
+                conditions.push({ organization: { $in: ['Student', 'Students'] } });
+            } else {
+                conditions.push({ organization: organization });
+            }
+        }
         
         if (search) {
             // H4: Escape regex metacharacters to prevent ReDoS
