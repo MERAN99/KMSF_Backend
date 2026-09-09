@@ -380,9 +380,52 @@ const syncStripe = async (req, res, next) => {
     }
 };
 
+// ─── GET /admin/members/ids ───────────────────────────────────────────────────
+// Lightweight endpoint: returns only user _id values matching filters (no pagination)
+const getMemberIds = async (req, res, next) => {
+    try {
+        const { status, organization, search } = req.query;
+
+        const filter = { role: { $ne: 'admin' } };
+        const conditions = [{ role: { $ne: 'admin' } }];
+        if (status) conditions.push({ membershipStatus: status });
+        if (organization) {
+            if (organization === 'Student') {
+                conditions.push({ organization: { $in: ['Student', 'Students'] } });
+            } else {
+                conditions.push({ organization: organization });
+            }
+        }
+        if (search) {
+            const safeSearch = escapeRegex(search);
+            conditions.push({
+                $or: [
+                    { firstName: { $regex: safeSearch, $options: 'i' } },
+                    { lastName: { $regex: safeSearch, $options: 'i' } },
+                    { email: { $regex: safeSearch, $options: 'i' } },
+                    { memberId: { $regex: safeSearch, $options: 'i' } },
+                    { organization: { $regex: safeSearch, $options: 'i' } },
+                ]
+            });
+        }
+
+        if (conditions.length > 1) {
+            filter.$and = conditions;
+            delete filter.role;
+        }
+
+        // Only select _id for performance
+        const ids = await User.find(filter).select('_id').lean();
+        res.status(200).json({ success: true, ids: ids.map(u => u._id) });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getMembers,
     getMember,
+    getMemberIds,
     createMember,
     updateMember,
     updateStatus,

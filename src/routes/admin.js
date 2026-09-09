@@ -3,6 +3,7 @@ const router = express.Router();
 const {
     getMembers,
     getMember,
+    getMemberIds,
     createMember,
     updateMember,
     updateStatus,
@@ -34,6 +35,7 @@ router.use(requireAuth, requireAdmin);
 
 // ─── Member CRUD & Stats ──────────────────────────────────────────────────────
 router.get('/stats', require('../controllers/adminStatsController').getAdminStats);
+router.get('/members/ids', getMemberIds);
 router.get('/members', getMembers);
 router.get('/member/:id', getMember);
 router.post('/member', validateCreateMember, createMember);
