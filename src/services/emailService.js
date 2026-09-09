@@ -16,13 +16,13 @@ const escapeHtml = (str) => String(str)
 const sendWelcomeEmail = async (user) => {
     try {
         const { subject, html } = welcomeEmailTemplate(user);
-        await brevoTransporter.sendMail({
-            from: process.env.BREVO_FROM || process.env.EMAIL_FROM,
+        await transporter.sendMail({
+            from: process.env.EMAIL_FROM,
             to: user.email,
             subject,
             html,
         });
-        console.log(`Welcome email sent to ${user.email}`);
+        console.log(`Welcome email sent to ${user.email} (via Gmail)`);
     } catch (error) {
         // Log but do NOT throw — email failure should not break the webhook response
         console.error(`Failed to send welcome email to ${user.email}: ${error.message}`);
@@ -33,7 +33,7 @@ const sendWelcomeEmail = async (user) => {
  * Helper to process email sending in batches with delays to avoid SMTP blocking
  * and ensure responsive UI.
  */
-const processInBatches = async (recipients, subject, html, batchSize = 10, delayMs = 1000) => {
+const processInBatches = async (recipients, subject, html, batchSize = 5, delayMs = 2000) => {
     let sent = 0;
     let failed = 0;
 
@@ -42,8 +42,8 @@ const processInBatches = async (recipients, subject, html, batchSize = 10, delay
 
         await Promise.all(batch.map(async (recipient) => {
             try {
-                await brevoTransporter.sendMail({
-                    from: process.env.BREVO_FROM || process.env.EMAIL_FROM,
+                await transporter.sendMail({
+                    from: process.env.EMAIL_FROM,
                     to: recipient.email,
                     subject,
                     html,
@@ -123,8 +123,8 @@ const sendContactEmail = async (name, email, subject, message) => {
             <p><strong>Message:</strong></p>
             <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
         `;
-        await brevoTransporter.sendMail({
-            from: process.env.BREVO_FROM || process.env.EMAIL_FROM,
+        await transporter.sendMail({
+            from: process.env.EMAIL_FROM,
             to: 'Info@kmsf.org.uk', // Send to KMSF directly
             replyTo: email,      // So they can reply directly to the user
             subject: `Contact Form: ${escapeHtml(subject)} - ${escapeHtml(name)}`,
