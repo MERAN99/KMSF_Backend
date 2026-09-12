@@ -39,7 +39,7 @@ const validateStartSubscription = [
         if (value.length > 128) {
             throw new Error('Password must not exceed 128 characters.');
         }
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,}$/;
         if (!passwordRegex.test(value)) {
             throw new Error('Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.');
         }
@@ -72,7 +72,7 @@ const validateRegister = [
         if (!value) throw new Error('Password is required.');
         // L4: Enforce max length before bcrypt to prevent DoS
         if (value.length > 128) throw new Error('Password must not exceed 128 characters.');
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,}$/;
         if (!passwordRegex.test(value)) {
             throw new Error('Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.');
         }
@@ -120,7 +120,7 @@ const validateCreateMember = [
         if (!value) return true;
         // L4: Enforce max length before bcrypt to prevent DoS
         if (value.length > 128) throw new Error('Password must not exceed 128 characters.');
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,}$/;
         if (!passwordRegex.test(value)) {
             throw new Error('Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.');
         }
@@ -162,7 +162,7 @@ const validateResetPassword = [
     body('email').isEmail().withMessage('Valid email is required.').normalizeEmail(),
     body('code').notEmpty().withMessage('Verification code is required.'),
     body('newPassword').custom((value) => {
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,}$/;
         if (!passwordRegex.test(value)) {
             throw new Error('Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.');
         }
