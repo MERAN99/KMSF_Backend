@@ -6,7 +6,8 @@ const {
     checkoutTicket,
     claimFreeTicket,
     getUserTickets,
-    getEventTicketsAdmin
+    getEventTicketsAdmin,
+    recoverTicketFromStripe
 } = require('../controllers/ticketController');
 
 // User routes
@@ -16,5 +17,7 @@ router.get('/users/me/tickets', requireAuth, getUserTickets);
 
 // Admin routes
 router.get('/admin/events/:id/tickets', requireAuth, requireAdmin, getEventTicketsAdmin);
+router.post('/admin/tickets/recover', requireAuth, requireAdmin, recoverTicketFromStripe);
 
 module.exports = router;
+

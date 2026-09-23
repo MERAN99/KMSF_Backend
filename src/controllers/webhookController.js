@@ -87,6 +87,13 @@ const handleWebhook = async (req, res) => {
 
 // ─── checkout.session.completed ───────────────────────────────────────────────
 const handleCheckoutCompleted = async (session) => {
+    console.log('[Webhook] checkout.session.completed:', {
+        mode: session.mode,
+        payment_status: session.payment_status,
+        metadata: session.metadata,
+        sessionId: session.id,
+    });
+
     // Handle one-time donation payments
     if (session.mode === 'payment' && session.metadata?.isDonation === 'true') {
         try {
@@ -108,8 +115,15 @@ const handleCheckoutCompleted = async (session) => {
     // Handle Event Tickets
     if (session.mode === 'payment' && session.metadata?.isEventTicket === 'true') {
         const Ticket = require('../models/Ticket');
+        console.log('[Webhook] Creating event ticket:', {
+            userId: session.metadata.userId,
+            eventId: session.metadata.eventId,
+            ticketType: session.metadata.ticketType,
+            pricePaid: session.amount_total / 100,
+            paymentStatus: session.payment_status,
+        });
         try {
-            await Ticket.create({
+            const ticket = await Ticket.create({
                 user: session.metadata.userId,
                 event: session.metadata.eventId,
                 ticketType: session.metadata.ticketType,
@@ -117,10 +131,16 @@ const handleCheckoutCompleted = async (session) => {
                 paymentStatus: session.payment_status === 'paid' ? 'paid' : 'pending',
                 stripeSessionId: session.id,
             });
-            console.log(`Event ticket created for user ${session.metadata.userId} (Event: ${session.metadata.eventId}).`);
+            console.log(`[Webhook] Event ticket CREATED successfully: ${ticket._id} (code: ${ticket.ticketCode}) for user ${session.metadata.userId} (Event: ${session.metadata.eventId}).`);
         } catch (error) {
-            console.error('Error saving event ticket:', error);
+            console.error('[Webhook] Error saving event ticket:', error.message, error);
         }
+        return;
+    }
+
+    // Log if a payment-mode session was received but didn't match any handler
+    if (session.mode === 'payment') {
+        console.warn('[Webhook] Unhandled payment session — no matching metadata:', session.metadata);
         return;
     }
 

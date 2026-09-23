@@ -143,9 +143,61 @@ const getEventTicketsAdmin = async (req, res, next) => {
     }
 };
 
+// ─── POST /admin/tickets/recover ─────────────────────────────────────────────
+// Manually recover a ticket from a Stripe session when the webhook failed
+const recoverTicketFromStripe = async (req, res, next) => {
+    try {
+        const stripe = require('../config/stripe');
+        const { sessionId } = req.body;
+
+        if (!sessionId) {
+            return res.status(400).json({ success: false, message: 'Stripe session ID is required.' });
+        }
+
+        // Fetch the session from Stripe
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+        if (!session) {
+            return res.status(404).json({ success: false, message: 'Stripe session not found.' });
+        }
+
+        if (session.payment_status !== 'paid') {
+            return res.status(400).json({ success: false, message: `Payment not completed. Status: ${session.payment_status}` });
+        }
+
+        if (session.metadata?.isEventTicket !== 'true') {
+            return res.status(400).json({ success: false, message: 'This session is not an event ticket purchase.' });
+        }
+
+        // Check if ticket already exists
+        const existingTicket = await Ticket.findOne({ stripeSessionId: sessionId });
+        if (existingTicket) {
+            return res.status(409).json({ success: false, message: 'Ticket already exists for this session.', data: existingTicket });
+        }
+
+        const ticket = await Ticket.create({
+            user: session.metadata.userId,
+            event: session.metadata.eventId,
+            ticketType: session.metadata.ticketType,
+            pricePaid: session.amount_total / 100,
+            paymentStatus: 'paid',
+            stripeSessionId: session.id,
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Ticket recovered successfully from Stripe session.',
+            data: ticket,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     checkoutTicket,
     claimFreeTicket,
     getUserTickets,
-    getEventTicketsAdmin
+    getEventTicketsAdmin,
+    recoverTicketFromStripe
 };
