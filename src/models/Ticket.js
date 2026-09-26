@@ -27,7 +27,9 @@ const ticketSchema = new mongoose.Schema({
         required: true
     },
     stripeSessionId: {
-        type: String
+        type: String,
+        unique: true,
+        sparse: true
     },
     ticketCode: {
         type: String,
@@ -49,6 +51,5 @@ const ticketSchema = new mongoose.Schema({
 // Add basic indexes for quick fetching
 ticketSchema.index({ user: 1 });
 ticketSchema.index({ event: 1 });
-ticketSchema.index({ ticketCode: 1 });
 
 module.exports = mongoose.model('Ticket', ticketSchema);

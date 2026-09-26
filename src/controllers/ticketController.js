@@ -238,25 +238,39 @@ const verifyTicketSession = async (req, res, next) => {
             return res.status(400).json({ success: false, message: 'This session is not an event ticket purchase.' });
         }
 
-        // 4) Verify this session belongs to the requesting user
-        if (session.metadata.userId !== user._id.toString()) {
+        // 4) Verify this session belongs to the requesting user (if user is logged in)
+        if (user && session.metadata.userId !== user._id.toString()) {
             return res.status(403).json({ success: false, message: 'This session does not belong to you.' });
         }
 
-        // 5) Create the ticket (webhook missed it)
-        const ticket = await Ticket.create({
-            user: session.metadata.userId,
-            event: session.metadata.eventId,
-            ticketType: session.metadata.ticketType,
-            pricePaid: session.amount_total / 100,
-            paymentStatus: 'paid',
-            stripeSessionId: session.id,
-        });
+        // 5) Create the ticket (webhook missed it or hasn't processed yet)
+        let ticket;
+        try {
+            ticket = await Ticket.create({
+                user: session.metadata.userId,
+                event: session.metadata.eventId,
+                ticketType: session.metadata.ticketType,
+                pricePaid: session.amount_total / 100,
+                paymentStatus: 'paid',
+                stripeSessionId: session.id,
+            });
+            console.log(`[verifyTicketSession] Ticket CREATED via fallback: ${ticket._id} (code: ${ticket.ticketCode}) for user ${session.metadata.userId}`);
+        } catch (createErr) {
+            // If duplicate key error (code 11000), webhook or concurrent request created it simultaneously
+            if (createErr.code === 11000) {
+                const existing = await Ticket.findOne({ stripeSessionId: sessionId })
+                    .populate('event', 'title date time location image');
+                return res.status(200).json({
+                    success: true,
+                    message: 'Ticket already exists.',
+                    data: existing,
+                });
+            }
+            throw createErr;
+        }
 
         const populatedTicket = await Ticket.findById(ticket._id)
             .populate('event', 'title date time location image');
-
-        console.log(`[verifyTicketSession] Ticket CREATED via fallback: ${ticket._id} (code: ${ticket.ticketCode}) for user ${user._id}`);
 
         res.status(201).json({
             success: true,

@@ -123,6 +123,13 @@ const handleCheckoutCompleted = async (session) => {
             paymentStatus: session.payment_status,
         });
         try {
+            // Check if ticket was already created (e.g. by frontend verify-session)
+            const existing = await Ticket.findOne({ stripeSessionId: session.id });
+            if (existing) {
+                console.log(`[Webhook] Ticket already exists for session ${session.id}: ${existing._id} (code: ${existing.ticketCode})`);
+                return;
+            }
+
             const ticket = await Ticket.create({
                 user: session.metadata.userId,
                 event: session.metadata.eventId,
@@ -133,6 +140,11 @@ const handleCheckoutCompleted = async (session) => {
             });
             console.log(`[Webhook] Event ticket CREATED successfully: ${ticket._id} (code: ${ticket.ticketCode}) for user ${session.metadata.userId} (Event: ${session.metadata.eventId}).`);
         } catch (error) {
+            // Ignore duplicate key error if concurrent verify-session created it
+            if (error.code === 11000) {
+                console.log(`[Webhook] Ticket already exists for session ${session.id} (handled concurrently).`);
+                return;
+            }
             console.error('[Webhook] Error saving event ticket:', error.message, error);
         }
         return;
