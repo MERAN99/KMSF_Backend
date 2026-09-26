@@ -194,10 +194,85 @@ const recoverTicketFromStripe = async (req, res, next) => {
     }
 };
 
+// ─── POST /tickets/verify-session ────────────────────────────────────────────
+// Called by frontend after Stripe redirect — ensures ticket is created even if webhook failed
+const verifyTicketSession = async (req, res, next) => {
+    try {
+        const stripe = require('../config/stripe');
+        const { sessionId } = req.body;
+        const user = req.user;
+
+        if (!sessionId) {
+            return res.status(400).json({ success: false, message: 'Session ID is required.' });
+        }
+
+        // 1) Check if ticket already exists (webhook already handled it)
+        const existingTicket = await Ticket.findOne({ stripeSessionId: sessionId })
+            .populate('event', 'title date time location image');
+        if (existingTicket) {
+            return res.status(200).json({
+                success: true,
+                message: 'Ticket already exists.',
+                data: existingTicket,
+            });
+        }
+
+        // 2) Fetch session from Stripe to validate
+        let session;
+        try {
+            session = await stripe.checkout.sessions.retrieve(sessionId);
+        } catch (stripeErr) {
+            console.error('[verifyTicketSession] Stripe retrieve error:', stripeErr.message);
+            return res.status(404).json({ success: false, message: 'Stripe session not found.' });
+        }
+
+        // 3) Validate the session
+        if (session.payment_status !== 'paid') {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Payment not completed. Status: ${session.payment_status}` 
+            });
+        }
+
+        if (session.metadata?.isEventTicket !== 'true') {
+            return res.status(400).json({ success: false, message: 'This session is not an event ticket purchase.' });
+        }
+
+        // 4) Verify this session belongs to the requesting user
+        if (session.metadata.userId !== user._id.toString()) {
+            return res.status(403).json({ success: false, message: 'This session does not belong to you.' });
+        }
+
+        // 5) Create the ticket (webhook missed it)
+        const ticket = await Ticket.create({
+            user: session.metadata.userId,
+            event: session.metadata.eventId,
+            ticketType: session.metadata.ticketType,
+            pricePaid: session.amount_total / 100,
+            paymentStatus: 'paid',
+            stripeSessionId: session.id,
+        });
+
+        const populatedTicket = await Ticket.findById(ticket._id)
+            .populate('event', 'title date time location image');
+
+        console.log(`[verifyTicketSession] Ticket CREATED via fallback: ${ticket._id} (code: ${ticket.ticketCode}) for user ${user._id}`);
+
+        res.status(201).json({
+            success: true,
+            message: 'Ticket created successfully.',
+            data: populatedTicket,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     checkoutTicket,
     claimFreeTicket,
     getUserTickets,
     getEventTicketsAdmin,
-    recoverTicketFromStripe
+    recoverTicketFromStripe,
+    verifyTicketSession
 };

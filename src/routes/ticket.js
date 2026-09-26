@@ -7,13 +7,15 @@ const {
     claimFreeTicket,
     getUserTickets,
     getEventTicketsAdmin,
-    recoverTicketFromStripe
+    recoverTicketFromStripe,
+    verifyTicketSession
 } = require('../controllers/ticketController');
 
 // User routes
 router.post('/events/:id/tickets/checkout', requireAuth, checkoutTicket);
 router.post('/events/:id/tickets/free', requireAuth, claimFreeTicket);
 router.get('/users/me/tickets', requireAuth, getUserTickets);
+router.post('/tickets/verify-session', requireAuth, verifyTicketSession);
 
 // Admin routes
 router.get('/admin/events/:id/tickets', requireAuth, requireAdmin, getEventTicketsAdmin);
