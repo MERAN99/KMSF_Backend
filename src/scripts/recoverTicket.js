@@ -63,6 +63,22 @@ if (!sessionId) {
             pricePaid: ticket.pricePaid,
         });
 
+        // Send confirmation email
+        try {
+            const User = require('../models/User');
+            const Event = require('../models/Event');
+            const { sendTicketConfirmationEmail } = require('../services/emailService');
+
+            const user = await User.findById(ticket.user);
+            const event = await Event.findById(ticket.event);
+            if (user && event) {
+                await sendTicketConfirmationEmail(ticket, user, event);
+                console.log('📧 Ticket confirmation email sent successfully to:', user.email);
+            }
+        } catch (emailErr) {
+            console.error('Failed to send confirmation email:', emailErr.message);
+        }
+
         process.exit(0);
     } catch (err) {
         console.error('Error recovering ticket:', err);
