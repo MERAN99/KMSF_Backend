@@ -1,6 +1,6 @@
 const { constructWebhookEvent } = require('../services/stripeService');
 const { createUserFromWebhook, findByStripeCustomerId, activateMembership, deactivateMembership } = require('../services/userService');
-const { sendWelcomeEmail } = require('../services/emailService');
+const { sendWelcomeEmail, sendTicketConfirmationEmail } = require('../services/emailService');
 const Donation = require('../models/Donation');
 const User = require('../models/User');
 const stripe = require('../config/stripe');
@@ -139,6 +139,18 @@ const handleCheckoutCompleted = async (session) => {
                 stripeSessionId: session.id,
             });
             console.log(`[Webhook] Event ticket CREATED successfully: ${ticket._id} (code: ${ticket.ticketCode}) for user ${session.metadata.userId} (Event: ${session.metadata.eventId}).`);
+
+            // Send confirmation email asynchronously (non-blocking)
+            const Event = require('../models/Event');
+            Promise.all([
+                User.findById(session.metadata.userId),
+                Event.findById(session.metadata.eventId)
+            ]).then(([ticketUser, ticketEvent]) => {
+                if (ticketUser && ticketEvent) {
+                    sendTicketConfirmationEmail(ticket, ticketUser, ticketEvent);
+                }
+            }).catch(err => console.error('[Webhook] Failed to send ticket confirmation email:', err.message));
+
         } catch (error) {
             // Ignore duplicate key error if concurrent verify-session created it
             if (error.code === 11000) {

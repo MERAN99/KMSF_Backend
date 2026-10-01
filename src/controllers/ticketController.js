@@ -1,6 +1,8 @@
 const Event = require('../models/Event');
+const User = require('../models/User');
 const Ticket = require('../models/Ticket');
 const { createEventTicketCheckoutSession } = require('../services/stripeService');
+const { sendTicketConfirmationEmail } = require('../services/emailService');
 
 // ─── POST /events/:id/tickets/checkout ──────────────────────────────────────
 const checkoutTicket = async (req, res, next) => {
@@ -98,6 +100,10 @@ const claimFreeTicket = async (req, res, next) => {
             paymentStatus: 'free'
         });
 
+        // Send confirmation email asynchronously (non-blocking)
+        sendTicketConfirmationEmail(ticket, user, event)
+            .catch(err => console.error('[claimFreeTicket] Email failed:', err.message));
+
         res.status(201).json({
             success: true,
             message: 'Free ticket claimed successfully.',
@@ -112,7 +118,7 @@ const claimFreeTicket = async (req, res, next) => {
 const getUserTickets = async (req, res, next) => {
     try {
         const user = req.user;
-        const tickets = await Ticket.find({ user: user._id })
+        const tickets = await Ticket.find({ user: user._id, paymentStatus: { $in: ['paid', 'free'] } })
             .populate('event', 'title date time location image category isTBD')
             .sort({ createdAt: -1 });
 
@@ -238,8 +244,8 @@ const verifyTicketSession = async (req, res, next) => {
             return res.status(400).json({ success: false, message: 'This session is not an event ticket purchase.' });
         }
 
-        // 4) Verify this session belongs to the requesting user (if user is logged in)
-        if (user && session.metadata.userId !== user._id.toString()) {
+        // 4) Verify this session belongs to the requesting user
+        if (session.metadata.userId !== user._id.toString()) {
             return res.status(403).json({ success: false, message: 'This session does not belong to you.' });
         }
 
@@ -272,10 +278,96 @@ const verifyTicketSession = async (req, res, next) => {
         const populatedTicket = await Ticket.findById(ticket._id)
             .populate('event', 'title date time location image');
 
+        // Send confirmation email asynchronously (non-blocking)
+        const ticketEvent = await Event.findById(session.metadata.eventId);
+        if (ticketEvent) {
+            sendTicketConfirmationEmail(ticket, user, ticketEvent)
+                .catch(err => console.error('[verifyTicketSession] Email failed:', err.message));
+        }
+
         res.status(201).json({
             success: true,
             message: 'Ticket created successfully.',
             data: populatedTicket,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ─── POST /admin/tickets/recover-all ─────────────────────────────────────────
+// Scan recent Stripe sessions and create tickets for any paid sessions missing from DB
+const recoverAllMissingTickets = async (req, res, next) => {
+    try {
+        const stripe = require('../config/stripe');
+        
+        // Fetch recent completed checkout sessions from Stripe (last 7 days)
+        const sevenDaysAgo = Math.floor((Date.now() - 7 * 24 * 60 * 60 * 1000) / 1000);
+        
+        let allSessions = [];
+        let hasMore = true;
+        let startingAfter = undefined;
+        
+        while (hasMore) {
+            const params = {
+                limit: 100,
+                created: { gte: sevenDaysAgo },
+            };
+            if (startingAfter) params.starting_after = startingAfter;
+            
+            const sessions = await stripe.checkout.sessions.list(params);
+            allSessions = allSessions.concat(sessions.data);
+            hasMore = sessions.has_more;
+            if (sessions.data.length > 0) {
+                startingAfter = sessions.data[sessions.data.length - 1].id;
+            }
+        }
+        
+        // Filter to only paid event ticket sessions
+        const ticketSessions = allSessions.filter(s => 
+            s.payment_status === 'paid' && 
+            s.metadata?.isEventTicket === 'true' &&
+            s.metadata?.userId &&
+            s.metadata?.eventId
+        );
+        
+        const recovered = [];
+        const alreadyExisted = [];
+        const errors = [];
+        
+        for (const session of ticketSessions) {
+            try {
+                const existing = await Ticket.findOne({ stripeSessionId: session.id });
+                if (existing) {
+                    alreadyExisted.push({ sessionId: session.id, ticketId: existing._id });
+                    continue;
+                }
+                
+                const ticket = await Ticket.create({
+                    user: session.metadata.userId,
+                    event: session.metadata.eventId,
+                    ticketType: session.metadata.ticketType,
+                    pricePaid: session.amount_total / 100,
+                    paymentStatus: 'paid',
+                    stripeSessionId: session.id,
+                });
+                
+                recovered.push({ sessionId: session.id, ticketId: ticket._id, ticketCode: ticket.ticketCode, userId: session.metadata.userId });
+                console.log(`[RecoverAll] Ticket CREATED: ${ticket._id} (code: ${ticket.ticketCode}) for user ${session.metadata.userId}`);
+            } catch (err) {
+                if (err.code === 11000) {
+                    alreadyExisted.push({ sessionId: session.id, note: 'duplicate key' });
+                } else {
+                    errors.push({ sessionId: session.id, error: err.message });
+                    console.error(`[RecoverAll] Error for session ${session.id}:`, err.message);
+                }
+            }
+        }
+        
+        res.status(200).json({
+            success: true,
+            message: `Scanned ${ticketSessions.length} paid ticket sessions. Recovered ${recovered.length} missing tickets.`,
+            data: { recovered, alreadyExisted: alreadyExisted.length, errors },
         });
     } catch (error) {
         next(error);
@@ -288,5 +380,6 @@ module.exports = {
     getUserTickets,
     getEventTicketsAdmin,
     recoverTicketFromStripe,
+    recoverAllMissingTickets,
     verifyTicketSession
 };

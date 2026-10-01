@@ -219,5 +219,76 @@ const passwordResetEmailTemplate = (code) => ({
     </body></html>
   `,
 });
+const ticketConfirmationEmailTemplate = ({ userName, eventTitle, eventDate, eventTime, eventLocation, ticketType, ticketCode, pricePaid, currency }) => ({
+  subject: `KMSF — Your Ticket for ${eventTitle}`,
+  html: `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Confirmation</title>
+    <style>
+      body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+      .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+      .header { background: linear-gradient(135deg, #1a3c5e, #2a5a8e); padding: 32px; text-align: center; }
+      .header h1 { color: #fff; margin: 0; font-size: 24px; }
+      .header p { color: #C8A441; margin: 8px 0 0; font-size: 14px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+      .body { padding: 32px; color: #333; }
+      .success-badge { text-align: center; margin-bottom: 24px; }
+      .success-badge span { display: inline-block; background: #e8f5e9; color: #2e7d32; font-weight: bold; font-size: 14px; padding: 8px 20px; border-radius: 20px; letter-spacing: 0.5px; }
+      .ticket-card { background: #fafafa; border: 2px solid #C8A441; border-radius: 12px; padding: 24px; margin: 20px 0; position: relative; }
+      .ticket-card::before { content: ''; position: absolute; top: 50%; left: -12px; width: 24px; height: 24px; background: #f4f4f4; border-radius: 50%; }
+      .ticket-card::after { content: ''; position: absolute; top: 50%; right: -12px; width: 24px; height: 24px; background: #f4f4f4; border-radius: 50%; }
+      .ticket-title { color: #1a3c5e; font-size: 20px; margin: 0 0 16px; font-weight: bold; }
+      .ticket-detail { margin: 10px 0; font-size: 14px; color: #555; }
+      .ticket-detail strong { color: #1a3c5e; display: inline-block; width: 100px; }
+      .ticket-code-box { text-align: center; margin-top: 20px; padding-top: 20px; border-top: 2px dashed #ddd; }
+      .ticket-code-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+      .ticket-code { font-size: 28px; font-weight: bold; color: #C8A441; letter-spacing: 3px; font-family: 'Courier New', monospace; }
+      .cta-button { display: inline-block; background: #C8A441; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: bold; margin-top: 24px; font-size: 15px; }
+      .note { background: #fff8e1; border-left: 4px solid #C8A441; padding: 12px 16px; border-radius: 4px; margin: 20px 0; font-size: 13px; color: #666; }
+      .footer { background: #f4f4f4; text-align: center; padding: 16px; font-size: 12px; color: #888; }
+    </style>
+    </head>
+    <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎫 Ticket Confirmed</h1>
+        <p>Kurdistan Medical Scientific Federation</p>
+      </div>
+      <div class="body">
+        <div class="success-badge"><span>✓ Payment Successful</span></div>
+        <p>Dear ${userName},</p>
+        <p>Thank you for your purchase! Your ticket has been confirmed. Here are your ticket details:</p>
+        
+        <div class="ticket-card">
+          <h2 class="ticket-title">${eventTitle}</h2>
+          <p class="ticket-detail"><strong>Date:</strong> ${eventDate}</p>
+          <p class="ticket-detail"><strong>Time:</strong> ${eventTime}</p>
+          <p class="ticket-detail"><strong>Location:</strong> ${eventLocation}</p>
+          <p class="ticket-detail"><strong>Ticket Type:</strong> ${ticketType}</p>
+          <p class="ticket-detail"><strong>Amount Paid:</strong> ${pricePaid > 0 ? `£${pricePaid.toFixed(2)} ${currency || 'GBP'}` : 'Free'}</p>
+          
+          <div class="ticket-code-box">
+            <p class="ticket-code-label">Your Ticket Code</p>
+            <p class="ticket-code">${ticketCode}</p>
+          </div>
+        </div>
+        
+        <div class="note">
+          <strong>📱 Digital Ticket:</strong> You can view and download your digital ticket anytime by logging into your KMSF account and clicking "My Tickets" in the navigation menu.
+        </div>
+        
+        <div style="text-align: center;">
+          <a href="https://kmsf.org.uk/events?showTickets=true" class="cta-button">View My Tickets</a>
+        </div>
+        
+        <p style="margin-top:32px;">We look forward to seeing you at the event!</p>
+        <p>Best regards,<br><strong>The KMSF Team</strong></p>
+      </div>
+      <div class="footer">© ${new Date().getFullYear()} KMSF. All rights reserved.</div>
+    </div>
+    </body></html>
+  `,
+});
 
-module.exports = { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, passwordResetEmailTemplate, eventNotificationTemplate, registrationReminderTemplate };
+module.exports = { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, passwordResetEmailTemplate, eventNotificationTemplate, registrationReminderTemplate, ticketConfirmationEmailTemplate };

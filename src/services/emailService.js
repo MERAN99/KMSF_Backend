@@ -1,5 +1,5 @@
 const { transporter, brevoTransporter } = require('../config/email');
-const { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, passwordResetEmailTemplate, eventNotificationTemplate, registrationReminderTemplate } = require('../utils/emailTemplates');
+const { welcomeEmailTemplate, announcementEmailTemplate, verificationEmailTemplate, passwordResetEmailTemplate, eventNotificationTemplate, registrationReminderTemplate, ticketConfirmationEmailTemplate } = require('../utils/emailTemplates');
 
 // ─── Security Helper ─────────────────────────────────────────────────────────────────────────
 // Escapes HTML special characters to prevent XSS in email bodies (H6, M4)
@@ -181,4 +181,39 @@ const sendBulkEmail = (recipients, title, message) => {
     return { status: 'processing', total: recipients.length };
 };
 
-module.exports = { sendContactEmail, sendWelcomeEmail, sendAnnouncementEmail, sendOTPEmail, sendPasswordResetEmail, sendEventNotificationEmail, sendBulkEmail };
+/**
+ * Sends a ticket confirmation email to the user after a successful ticket purchase.
+ * Non-blocking — failures are logged but do not throw.
+ */
+const sendTicketConfirmationEmail = async (ticket, user, event) => {
+    try {
+        const eventDate = event.isTBD ? 'TBD' : (event.date ? new Date(event.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : 'TBD');
+        const eventTime = event.time || 'TBD';
+        const eventLocation = event.location || 'TBD';
+
+        const { subject, html } = ticketConfirmationEmailTemplate({
+            userName: `${user.firstName} ${user.lastName}`,
+            eventTitle: event.title,
+            eventDate,
+            eventTime,
+            eventLocation,
+            ticketType: ticket.ticketType,
+            ticketCode: ticket.ticketCode,
+            pricePaid: ticket.pricePaid,
+            currency: 'GBP',
+        });
+
+        await transporter.sendMail({
+            from: process.env.EMAIL_FROM,
+            to: user.email,
+            subject,
+            html,
+        });
+        console.log(`Ticket confirmation email sent to ${user.email} for event "${event.title}"`);
+    } catch (error) {
+        // Log but do NOT throw — email failure should not break the ticket creation
+        console.error(`Failed to send ticket confirmation email to ${user.email}: ${error.message}`);
+    }
+};
+
+module.exports = { sendContactEmail, sendWelcomeEmail, sendAnnouncementEmail, sendOTPEmail, sendPasswordResetEmail, sendEventNotificationEmail, sendBulkEmail, sendTicketConfirmationEmail };
