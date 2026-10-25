@@ -46,6 +46,11 @@ const eventSchema = new mongoose.Schema({
         default: 'Conference',
     },
     prices: [priceSchema],
+    // Optional PDF attachment (Cloudinary URL)
+    attachedPdf: {
+        type: String,
+        default: null,
+    },
     createdAt: {
         type: Date,
         default: Date.now,

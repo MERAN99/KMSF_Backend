@@ -48,6 +48,8 @@ const getMembers = async (req, res, next) => {
                     { email: { $regex: safeSearch, $options: 'i' } },
                     { memberId: { $regex: safeSearch, $options: 'i' } },
                     { organization: { $regex: safeSearch, $options: 'i' } },
+                    { profession: { $regex: safeSearch, $options: 'i' } },
+                    { speciality: { $regex: safeSearch, $options: 'i' } },
                 ]
             });
         }

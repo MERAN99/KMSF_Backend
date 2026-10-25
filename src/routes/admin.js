@@ -52,8 +52,8 @@ router.patch('/member/:id/toggle-block', toggleBlockMember);
 
 // ─── Event Management ─────────────────────────────────────────────────────────
 router.get('/events', getEvents);
-router.post('/event', upload.fields([{ name: 'images', maxCount: 3 }, { name: 'galleryImages', maxCount: 1000 }]), createEvent);
-router.put('/event/:id', upload.fields([{ name: 'images', maxCount: 3 }, { name: 'galleryImages', maxCount: 1000 }]), updateEvent);
+router.post('/event', upload.fields([{ name: 'images', maxCount: 3 }, { name: 'galleryImages', maxCount: 1000 }, { name: 'attachedPdf', maxCount: 1 }]), createEvent);
+router.put('/event/:id', upload.fields([{ name: 'images', maxCount: 3 }, { name: 'galleryImages', maxCount: 1000 }, { name: 'attachedPdf', maxCount: 1 }]), updateEvent);
 router.delete('/event/:id', deleteEvent);
 router.post('/event/:id/notify', notifyMembers);
 

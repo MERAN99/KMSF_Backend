@@ -50,7 +50,7 @@ exports.getEvent = async (req, res, next) => {
     }
 };
 
-// @desc    Create new event (supports multiple images)
+// @desc    Create new event (supports multiple images and optional PDF attachment)
 // @route   POST /admin/event
 // @access  Private/Admin
 exports.createEvent = async (req, res, next) => {
@@ -76,6 +76,10 @@ exports.createEvent = async (req, res, next) => {
             if (req.files.galleryImages && req.files.galleryImages.length > 0) {
                 eventData.galleryImages = req.files.galleryImages.map(f => f.path);
             }
+            // Handle attached PDF
+            if (req.files.attachedPdf && req.files.attachedPdf.length > 0) {
+                eventData.attachedPdf = req.files.attachedPdf[0].path;
+            }
         }
 
         // Handle prices if sent as a JSON string from FormData
@@ -94,12 +98,12 @@ exports.createEvent = async (req, res, next) => {
     }
 };
 
-// @desc    Update event (supports multiple images — new uploads are merged with existing)
+// @desc    Update event (supports multiple images — new uploads are merged with existing, and optional PDF)
 // @route   PUT /admin/event/:id
 // @access  Private/Admin
 exports.updateEvent = async (req, res, next) => {
     try {
-        const { title, date, time, location, description, category, prices, existingImages, existingGalleryImages, isTBD } = req.body;
+        const { title, date, time, location, description, category, prices, existingImages, existingGalleryImages, isTBD, existingPdf, removePdf } = req.body;
 
         const isTbdBool = isTBD === 'true' || isTBD === true;
         const eventData = {
@@ -132,6 +136,23 @@ exports.updateEvent = async (req, res, next) => {
             }
             if (req.files.galleryImages && req.files.galleryImages.length > 0) {
                 newGalleryImages = req.files.galleryImages.map(f => f.path);
+            }
+            // Handle attached PDF: new upload replaces existing
+            if (req.files.attachedPdf && req.files.attachedPdf.length > 0) {
+                eventData.attachedPdf = req.files.attachedPdf[0].path;
+            } else if (removePdf === 'true' || removePdf === true) {
+                // Client explicitly asked to remove the PDF
+                eventData.attachedPdf = null;
+            } else if (existingPdf) {
+                // Keep the existing PDF URL
+                eventData.attachedPdf = existingPdf;
+            }
+        } else {
+            // No files uploaded at all — handle PDF removal or retention
+            if (removePdf === 'true' || removePdf === true) {
+                eventData.attachedPdf = null;
+            } else if (existingPdf) {
+                eventData.attachedPdf = existingPdf;
             }
         }
 
