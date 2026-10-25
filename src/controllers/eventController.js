@@ -1,6 +1,19 @@
+const https = require('https');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const { sendEventNotificationEmail } = require('../services/emailService');
+const cloudinary = require('../config/cloudinary');
+
+// Helper to format event with proxy PDF URL
+const formatEventPdf = (req, event) => {
+    const obj = event.toObject ? event.toObject() : { ...event };
+    if (obj.attachedPdf) {
+        const host = req.get('host');
+        const protocol = req.protocol;
+        obj.attachedPdf = `${protocol}://${host}/events/${obj._id}/pdf`;
+    }
+    return obj;
+};
 
 // @desc    Get all events
 // @route   GET /events
@@ -17,10 +30,12 @@ exports.getEvents = async (req, res, next) => {
             return new Date(a.date) - new Date(b.date);
         });
 
+        const formatted = events.map(ev => formatEventPdf(req, ev));
+
         res.status(200).json({
             success: true,
-            count: events.length,
-            data: events
+            count: formatted.length,
+            data: formatted
         });
     } catch (error) {
         next(error);
@@ -43,8 +58,51 @@ exports.getEvent = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            data: event
+            data: formatEventPdf(req, event)
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Stream attached PDF for an event
+// @route   GET /events/:id/pdf
+// @access  Public
+exports.getEventPdf = async (req, res, next) => {
+    try {
+        const event = await Event.findById(req.params.id);
+        if (!event || !event.attachedPdf) {
+            return res.status(404).send('PDF not found for this event.');
+        }
+
+        // If stored as Cloudinary URL, use authenticated signed download URL to stream it directly
+        if (event.attachedPdf.includes('cloudinary.com')) {
+            const match = event.attachedPdf.match(/\/upload\/(?:v\d+\/)?(.+)$/);
+            if (match && match[1]) {
+                const publicId = match[1];
+                const downloadUrl = cloudinary.utils.private_download_url(publicId, '', {
+                    resource_type: 'raw',
+                    type: 'upload',
+                });
+
+                return https.get(downloadUrl, (cldRes) => {
+                    if (cldRes.statusCode === 200) {
+                        res.setHeader('Content-Type', 'application/pdf');
+                        res.setHeader('Content-Disposition', 'inline; filename="event-programme.pdf"');
+                        if (cldRes.headers['content-length']) {
+                            res.setHeader('Content-Length', cldRes.headers['content-length']);
+                        }
+                        return cldRes.pipe(res);
+                    }
+                    return res.redirect(event.attachedPdf);
+                }).on('error', (err) => {
+                    console.error('Error streaming PDF from Cloudinary:', err);
+                    return res.redirect(event.attachedPdf);
+                });
+            }
+        }
+
+        return res.redirect(event.attachedPdf);
     } catch (error) {
         next(error);
     }
